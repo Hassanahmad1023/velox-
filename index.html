@@ -6,7 +6,12 @@
 <meta name="theme-color" content="#0a0a0a"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <meta name="description" content="VELOX — Real-time GPS speedometer using satellite positioning"/>
+<!-- iOS: hide status bar when launched from home screen -->
+<meta name="apple-touch-fullscreen" content="yes"/>
+<!-- Disable tap highlight & callout on iOS -->
+<style>* { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }</style>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAFEUlEQVR4nO3cXVJbOxCFUXMrT84sMg9GzzwyizznPlBUEcpgc36kbu21BpDYUn/SMVB+ul6vfy8Q6r/ZLwBmEgDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRAtB+zX8Dqfv953v1v/Pr5csAr4ZYnX4x1jCMG/buEsZ8ANpox8PcI4vsE8KCKA3+PIO4TwBc6Dv1nxHCbAG5YafA/EsK/BPDOyoP/kRBeCeCSNfgfpYcQHUDy4H+UGkJkAAb/c2khRAVg8B+XEkJEAAZ/u9VDWP6P4Qz/Pquv39I3QJXN23OKrvAeKlsygFlDM3JIEt7jCMsFMHIwKg1D6vvea6kARgxBh823Do9bIgAbfpt1ua99AGducvfNfc863dY6gLM2tfOG3mPN/tU2gDM2susmbmH9XrX8RZjN2++M91vldxbf0e4GOHqR0wb/luQ1bXUDJG/UmY5eh043QZsb4MhFNfifS1vnFjdA2qbMdOT6dLgJWgRwFMP/mKR1Kv8I5KsF51p9/UvfAKsvfgdHrF/lR6GyARj+OlaOoGwAexn+Y626niUD2HtarLpZs+1d14q3QLkADH9tq0VQKgDD38NKEZQKAEYrE4DTv5dVboEyAexh+OdYYd1LBLDnNFhhEzrr/p1HJQKAWaYH4PTvr/MtMD2ArQz/q9kD9KbrfkwNoMrmdfW2ft3Xcebrb3kDdD1tzvT7z/P0EDruy7QAtm5Wx0U+w631q7A2W1/DrHhb3gBwlCkBOP33qXr6v+l0C7gBiDY8AKf/PtVP/zddbgE3QCOzf8qzIgE0V/H072RoAB5/tuvy6PNeh8cgNwDRygdQ/ZQboePp/6b66ywfQDoffM81LAAbeZzqp+oRRs1L6RsgYaO/0vnR573Kr7l0AHA2ARS1yulf3ZAAPP+zxYi5+XH6/7DRyqfdVxv76+fLkqf/Z+9rtrIBrObRza84JCvzGWAA33pXlwBO5kSvTQAnOmr4RXSe0wNI3byj37d1PEfJG6D7M+9Zm9Y9gor7WjKAzs4e0u4RVCMAogmAaAI40KjHE49BxxEA0QRANAEQTQBEEwDRBEA0ARxo1K/6K/5JQVcCIJoAiCaAg539eOLx51glA+j+q/6zhrT78Ffc19MD6L5pWx39vq3jOUreAKs4avNSh38EAZxs7/Aa/nMJYICtQ2z4z+eLsQZ5P8z3vhmOccoG8PvP87LDsOr7+krFnwBdLoMegRI3nP1GzI3PAEQTANFKB1D1uZHvqbyPwwLwOYDvGDUvpW8AOFv5ACpfn9xXff/KBwBnGhrA1ue66qcIt23dt5GfF90ARBMA0YYH4DEoQ4fHn8vFDUC4KQG4BdbW5fS/XNwAhJsWgFtgTZ1O/8ul2Q3w6+eLvykqrtv+PF2v178zX8AjJ0a3ReXVo7fBzP0tfwMY/r463NjTb4DL5fZJUX3h+L6K+1zuBuhwarBNxX0tcQPALOVuABhJAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDR/gcmhaSikgNmqwAAAABJRU5ErkJggg=="/>
 <title>VELOX — GPS Speed</title>
@@ -106,22 +111,21 @@ body::before{
 
 /* ── Button ── */
 .start-btn{
-  width:100%;padding:15px;background:transparent;
-  border:1px solid var(--accent);color:var(--accent);
+  width:100%;padding:15px;
+  background:var(--accent);
+  border:1px solid var(--accent);
+  color:#000;
   font-family:'Space Mono',monospace;font-size:11px;
-  letter-spacing:0.3em;cursor:pointer;transition:all 0.2s;
-  text-transform:uppercase;position:relative;overflow:hidden;
+  letter-spacing:0.3em;cursor:pointer;
+  transition:background 0.25s, color 0.25s, border-color 0.25s;
+  text-transform:uppercase;position:relative;
 }
-.start-btn::after{
-  content:'';position:absolute;inset:0;background:var(--accent);
-  transform:translateX(-100%);transition:transform 0.2s ease;z-index:-1;
-}
-.start-btn:hover::after{transform:translateX(0);}
-.start-btn:hover{color:#000;}
 .start-btn:active{transform:scale(0.99);}
-.start-btn.tracking{border-color:var(--muted);color:var(--dim);}
-.start-btn.tracking::after{background:var(--muted);}
-.start-btn.tracking:hover{color:#000;}
+.start-btn.tracking{
+  background:#0a0a0a;
+  border:1px solid #444;
+  color:#f0f0f0;
+}
 
 /* ── Status dot ── */
 .sdot{
@@ -187,7 +191,7 @@ body::before{
     <path id="arc-zone-r" d="" stroke="rgba(255,60,60,0.15)"  stroke-width="4" fill="none" stroke-linecap="round"/>
     <path id="arc-fill" d="" stroke="#e8ff47" stroke-width="4" fill="none" stroke-linecap="round"/>
     <g id="ticks"></g>
-    <g id="speed-labels" font-family="'Space Mono',monospace" font-size="8" fill="#333" text-anchor="middle"></g>
+    <g id="speed-labels" font-family="'Space Mono',monospace" font-size="8" fill="#e8ff47" text-anchor="middle"></g>
     <line id="needle" x1="150" y1="170" x2="150" y2="170" stroke="#e8ff47" stroke-width="2" stroke-linecap="round"/>
     <circle cx="150" cy="170" r="6" fill="#1a1a1a" stroke="#333" stroke-width="1.5"/>
     <circle cx="150" cy="170" r="3" fill="#e8ff47"/>
@@ -544,6 +548,31 @@ const _startTracking = startTracking;
 startTracking = function() { _startTracking(); requestWakeLock(); };
 const _stopTracking = stopTracking;
 stopTracking = function() { _stopTracking(); releaseWakeLock(); };
+
+// ── Fullscreen API ────────────────────────────────────────────
+// Requests true fullscreen (hides browser chrome) on Android/Chrome.
+// iOS Safari uses the manifest + apple-mobile-web-app-capable meta instead.
+function requestFullscreen() {
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen ||
+              el.mozRequestFullScreen || el.msRequestFullscreen;
+  if (req) req.call(el).catch(() => {});
+}
+
+// Auto-request fullscreen on first user tap anywhere (required by browsers —
+// fullscreen must be triggered by a user gesture)
+document.addEventListener('click', function enterFS() {
+  requestFullscreen();
+  document.removeEventListener('click', enterFS);
+}, { once: true });
+
+// Also re-request if user exits fullscreen (e.g. back button) while tracking
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && tracking) requestFullscreen();
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  if (!document.webkitFullscreenElement && tracking) requestFullscreen();
+});
 
 // ── Init ──────────────────────────────────────────────────────
 setUnit(unit);
