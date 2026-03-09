@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.hassanahmad.velox",
+    "sha256_cert_fingerprints": [
+      "2B:E6:34:D1:67:A3:4E:6D:CB:6B:42:48:93:AE:43:46:E9:26:38:24:F1:6D:23:17:AF:22:02:83:5F:74:14:9F"
+    ]
+  }
+}]
