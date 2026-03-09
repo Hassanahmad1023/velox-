@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="theme-color" content="#0a0a0a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="description" content="VELOX — Real-time GPS speedometer using satellite positioning"/>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAFEUlEQVR4nO3cXVJbOxCFUXMrT84sMg9GzzwyizznPlBUEcpgc36kbu21BpDYUn/SMVB+ul6vfy8Q6r/ZLwBmEgDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRAtB+zX8Dqfv953v1v/Pr5csAr4ZYnX4x1jCMG/buEsZ8ANpox8PcI4vsE8KCKA3+PIO4TwBc6Dv1nxHCbAG5YafA/EsK/BPDOyoP/kRBeCeCSNfgfpYcQHUDy4H+UGkJkAAb/c2khRAVg8B+XEkJEAAZ/u9VDWP6P4Qz/Pquv39I3QJXN23OKrvAeKlsygFlDM3JIEt7jCMsFMHIwKg1D6vvea6kARgxBh823Do9bIgAbfpt1ua99AGducvfNfc863dY6gLM2tfOG3mPN/tU2gDM2susmbmH9XrX8RZjN2++M91vldxbf0e4GOHqR0wb/luQ1bXUDJG/UmY5eh043QZsb4MhFNfifS1vnFjdA2qbMdOT6dLgJWgRwFMP/mKR1Kv8I5KsF51p9/UvfAKsvfgdHrF/lR6GyARj+OlaOoGwAexn+Y626niUD2HtarLpZs+1d14q3QLkADH9tq0VQKgDD38NKEZQKAEYrE4DTv5dVboEyAexh+OdYYd1LBLDnNFhhEzrr/p1HJQKAWaYH4PTvr/MtMD2ArQz/q9kD9KbrfkwNoMrmdfW2ft3Xcebrb3kDdD1tzvT7z/P0EDruy7QAtm5Wx0U+w631q7A2W1/DrHhb3gBwlCkBOP33qXr6v+l0C7gBiDY8AKf/PtVP/zddbgE3QCOzf8qzIgE0V/H072RoAB5/tuvy6PNeh8cgNwDRygdQ/ZQboePp/6b66ywfQDoffM81LAAbeZzqp+oRRs1L6RsgYaO/0vnR573Kr7l0AHA2ARS1yulf3ZAAPP+zxYi5+XH6/7DRyqfdVxv76+fLkqf/Z+9rtrIBrObRza84JCvzGWAA33pXlwBO5kSvTQAnOmr4RXSe0wNI3byj37d1PEfJG6D7M+9Zm9Y9gor7WjKAzs4e0u4RVCMAogmAaAI40KjHE49BxxEA0QRANAEQTQBEEwDRBEA0ARxo1K/6K/5JQVcCIJoAiCaAg539eOLx51glA+j+q/6zhrT78Ffc19MD6L5pWx39vq3jOUreAKs4avNSh38EAZxs7/Aa/nMJYICtQ2z4z+eLsQZ5P8z3vhmOccoG8PvP87LDsOr7+krFnwBdLoMegRI3nP1GzI3PAEQTANFKB1D1uZHvqbyPwwLwOYDvGDUvpW8AOFv5ACpfn9xXff/KBwBnGhrA1ue66qcIt23dt5GfF90ARBMA0YYH4DEoQ4fHn8vFDUC4KQG4BdbW5fS/XNwAhJsWgFtgTZ1O/8ul2Q3w6+eLvykqrtv+PF2v178zX8AjJ0a3ReXVo7fBzP0tfwMY/r463NjTb4DL5fZJUX3h+L6K+1zuBuhwarBNxX0tcQPALOVuABhJAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDR/gcmhaSikgNmqwAAAABJRU5ErkJggg=="/>
+<title>VELOX — GPS Speed</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--border:#1e1e1e;--accent:#e8ff47;
+  --muted:#333;--text:#f0f0f0;--dim:#555;--red:#ff4444;
+}
+html,body{
+  height:100%;background:var(--bg);color:var(--text);
+  font-family:'Space Mono',monospace;overflow:hidden;
+  -webkit-font-smoothing:antialiased;touch-action:manipulation;
+}
+body{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:100svh;padding:20px;position:relative;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,0.013) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.013) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+/* ── Header ── */
+.header{
+  position:absolute;top:0;left:0;right:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px;
+}
+.wordmark{
+  font-family:'Bebas Neue',sans-serif;font-size:14px;
+  letter-spacing:0.35em;color:var(--dim);user-select:none;
+}
+.sat-badge{
+  font-size:9px;letter-spacing:0.15em;color:var(--dim);
+  border:1px solid #222;padding:3px 8px;
+  display:flex;align-items:center;gap:5px;
+}
+.sat-dot{width:5px;height:5px;border-radius:50%;background:var(--dim);transition:background 0.3s;}
+.sat-dot.locked{background:var(--accent);box-shadow:0 0 5px var(--accent);}
+
+/* ── Gauge ── */
+.gauge-wrap{
+  position:relative;width:300px;height:200px;
+  margin-bottom:-10px;
+}
+#gauge-svg{width:100%;height:100%;overflow:visible;}
+
+/* ── Speed ── */
+.speed-block{text-align:center;line-height:1;margin-bottom:2px;position:relative;}
+.speed-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(80px,22vw,116px);
+  color:var(--text);letter-spacing:-3px;
+  transition:color 0.4s ease;display:block;
+}
+.speed-num.moving{color:var(--accent);text-shadow:0 0 40px rgba(232,255,71,0.2);}
+.speed-num.fast{color:#ff9500;text-shadow:0 0 40px rgba(255,149,0,0.25);}
+
+.unit-row{
+  display:flex;align-items:center;justify-content:center;
+  gap:10px;margin-bottom:22px;
+}
+.unit-label{
+  font-size:10px;letter-spacing:0.25em;color:var(--dim);
+  cursor:pointer;padding:4px 10px;border:1px solid transparent;
+  transition:all 0.2s;user-select:none;
+}
+.unit-label.active{color:var(--accent);border-color:var(--accent);}
+.unit-label:hover:not(.active){color:#888;border-color:#333;}
+
+/* ── Stats grid ── */
+.stats{
+  width:100%;display:grid;
+  grid-template-columns:1fr 1px 1fr 1px 1fr 1px 1fr;
+  border:1px solid var(--border);margin-bottom:16px;
+}
+.stat-divider{background:var(--border);}
+.stat{padding:12px 8px;text-align:center;}
+.stat-val{
+  font-family:'Bebas Neue',sans-serif;font-size:20px;
+  color:var(--text);display:block;line-height:1;margin-bottom:3px;
+}
+.stat-label{font-size:8px;color:var(--dim);letter-spacing:0.18em;text-transform:uppercase;}
+
+/* ── Signal ── */
+.signal-row{
+  width:100%;display:flex;align-items:center;
+  gap:10px;margin-bottom:16px;
+}
+.signal-label{font-size:9px;letter-spacing:0.2em;color:var(--dim);white-space:nowrap;}
+.signal-track{flex:1;height:2px;background:var(--muted);overflow:hidden;}
+.signal-fill{height:100%;background:var(--accent);transition:width 0.6s ease;width:0%;}
+.signal-val{font-size:9px;color:var(--dim);white-space:nowrap;min-width:52px;text-align:right;}
+
+/* ── Button ── */
+.start-btn{
+  width:100%;padding:15px;background:transparent;
+  border:1px solid var(--accent);color:var(--accent);
+  font-family:'Space Mono',monospace;font-size:11px;
+  letter-spacing:0.3em;cursor:pointer;transition:all 0.2s;
+  text-transform:uppercase;position:relative;overflow:hidden;
+}
+.start-btn::after{
+  content:'';position:absolute;inset:0;background:var(--accent);
+  transform:translateX(-100%);transition:transform 0.2s ease;z-index:-1;
+}
+.start-btn:hover::after{transform:translateX(0);}
+.start-btn:hover{color:#000;}
+.start-btn:active{transform:scale(0.99);}
+.start-btn.tracking{border-color:var(--muted);color:var(--dim);}
+.start-btn.tracking::after{background:var(--muted);}
+.start-btn.tracking:hover{color:#000;}
+
+/* ── Status dot ── */
+.sdot{
+  width:6px;height:6px;border-radius:50%;background:var(--dim);
+  display:inline-block;margin-right:8px;transition:background 0.3s;vertical-align:middle;
+}
+.sdot.on{background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* ── Error ── */
+.error-msg{
+  font-size:9px;color:var(--red);letter-spacing:0.15em;
+  text-align:center;margin-top:8px;min-height:14px;
+}
+
+/* ── Footer ── */
+.footer{
+  position:absolute;bottom:14px;left:0;right:0;
+  font-size:8px;color:#252525;letter-spacing:0.2em;
+  text-align:center;user-select:none;
+}
+
+/* ── Install banner ── */
+#install-banner{
+  display:none;position:fixed;bottom:0;left:0;right:0;
+  background:#0f0f0f;border-top:1px solid var(--border);
+  padding:10px 18px;align-items:center;
+  justify-content:space-between;gap:10px;z-index:100;
+}
+#install-banner.visible{display:flex;}
+#install-banner span{font-size:9px;color:var(--dim);letter-spacing:0.15em;}
+#install-btn{
+  font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.2em;
+  color:#000;background:var(--accent);border:none;padding:7px 12px;cursor:pointer;
+}
+#dismiss-btn{
+  font-family:'Space Mono',monospace;font-size:9px;
+  color:var(--dim);background:transparent;border:1px solid var(--border);
+  padding:7px 9px;cursor:pointer;
+}
+
+/* ── Speed limit warning flash ── */
+@keyframes warnFlash{0%,100%{opacity:0}50%{opacity:1}}
+.warn-flash{animation:warnFlash 0.5s ease 3;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="wordmark">VELOX</div>
+  <div class="sat-badge">
+    <div class="sat-dot" id="sat-dot"></div>
+    <span id="sat-label">NO SAT</span>
+  </div>
+</div>
+
+<div class="gauge-wrap">
+  <svg id="gauge-svg" viewBox="0 0 300 200">
+    <!-- Outer glow ring (decorative) -->
+    <path id="arc-glow" d="" stroke="rgba(232,255,71,0.04)" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <!-- Track -->
+    <path id="arc-track" d="" stroke="#1c1c1c" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- Speed zone colors: green/yellow/red segments -->
+    <path id="arc-zone-g" d="" stroke="rgba(100,220,80,0.15)" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path id="arc-zone-y" d="" stroke="rgba(255,180,0,0.15)"  stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path id="arc-zone-r" d="" stroke="rgba(255,60,60,0.15)"  stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- Fill arc -->
+    <path id="arc-fill" d="" stroke="#e8ff47" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- Tick marks group -->
+    <g id="ticks"></g>
+    <!-- Speed labels -->
+    <g id="speed-labels" font-family="'Space Mono',monospace" font-size="8" fill="#333" text-anchor="middle"></g>
+    <!-- Needle -->
+    <line id="needle" x1="150" y1="170" x2="150" y2="170" stroke="#e8ff47" stroke-width="2" stroke-linecap="round"/>
+    <!-- Center hub -->
+    <circle cx="150" cy="170" r="6" fill="#1a1a1a" stroke="#333" stroke-width="1.5"/>
+    <circle cx="150" cy="170" r="3" fill="#e8ff47"/>
+  </svg>
+</div>
+
+<div class="speed-block">
+  <span class="speed-num" id="speed-display">0</span>
+</div>
+
+<div class="unit-row">
+  <span class="unit-label active" id="btn-kmh" onclick="setUnit('kmh')">KM/H</span>
+  <span class="unit-label"        id="btn-mph" onclick="setUnit('mph')">MPH</span>
+  <span class="unit-label"        id="btn-ms"  onclick="setUnit('ms')">M/S</span>
+</div>
+
+<div class="stats">
+  <div class="stat"><span class="stat-val" id="stat-max">0</span><span class="stat-label">MAX</span></div>
+  <div class="stat-divider"></div>
+  <div class="stat"><span class="stat-val" id="stat-avg">0</span><span class="stat-label">AVG</span></div>
+  <div class="stat-divider"></div>
+  <div class="stat"><span class="stat-val" id="stat-hdg">—</span><span class="stat-label">DIR</span></div>
+  <div class="stat-divider"></div>
+  <div class="stat"><span class="stat-val" id="stat-alt">—</span><span class="stat-label">ALT M</span></div>
+</div>
+
+<div class="signal-row">
+  <span class="signal-label">GPS</span>
+  <div class="signal-track"><div class="signal-fill" id="signal-fill"></div></div>
+  <span class="signal-val" id="signal-val">NO LOCK</span>
+</div>
+
+<button class="start-btn" id="start-btn" onclick="toggleTracking()">
+  <span class="sdot" id="sdot"></span>START TRACKING
+</button>
+<div class="error-msg" id="error-msg"></div>
+
+<div class="footer">VELOX · GPS SPEEDOMETER · GNSS SATELLITE POSITIONING</div>
+
+<div id="install-banner">
+  <span>ADD VELOX TO HOME SCREEN</span>
+  <div style="display:flex;gap:8px">
+    <button id="dismiss-btn" onclick="dismissInstall()">✕</button>
+    <button id="install-btn" onclick="installApp()">INSTALL</button>
+  </div>
+</div>
+
+<script>
+// ── Constants ────────────────────────────────────────────────
+const CX = 150, CY = 170, R = 130;
+// 8 o'clock = 240°, 4 o'clock = 480° (240+240), sweep = 240°
+const ARC_START = 240, ARC_END = 480, ARC_SWEEP = 240;
+
+// ── State ────────────────────────────────────────────────────
+let unit = (() => { try { return localStorage.getItem('velox-unit') || 'kmh'; } catch(e) { return 'kmh'; } })();
+let tracking = false, watchId = null;
+let maxSpeed = 0, speedSamples = [], currentSpeedMS = 0;
+let deferredPrompt = null;
+
+const convert = { kmh: v => v*3.6, mph: v => v*2.23694, ms: v => v };
+const maxForUnit = { kmh: 220, mph: 140, ms: 60 };
+function toDisplay(ms) { return Math.round(convert[unit](ms)); }
+
+// ── Geometry ─────────────────────────────────────────────────
+function polarToXY(deg, r) {
+  const rad = (deg - 90) * Math.PI / 180;
+  return { x: CX + r*Math.cos(rad), y: CY + r*Math.sin(rad) };
+}
+
+function describeArc(startDeg, endDeg) {
+  const s = polarToXY(startDeg, R), e = polarToXY(endDeg, R);
+  const sweep = endDeg - startDeg;
+  const large = sweep > 180 ? 1 : 0;
+  return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${R} ${R} 0 ${large} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
+}
+
+// ── Build Gauge ───────────────────────────────────────────────
+function buildGauge() {
+  const fullArc = describeArc(ARC_START, ARC_END);
+
+  document.getElementById('arc-glow').setAttribute('d', fullArc);
+  document.getElementById('arc-track').setAttribute('d', fullArc);
+
+  // Zone arcs (green 0-50%, yellow 50-80%, red 80-100%)
+  const mid1 = ARC_START + ARC_SWEEP * 0.5;
+  const mid2 = ARC_START + ARC_SWEEP * 0.8;
+  document.getElementById('arc-zone-g').setAttribute('d', describeArc(ARC_START, mid1));
+  document.getElementById('arc-zone-y').setAttribute('d', describeArc(mid1, mid2));
+  document.getElementById('arc-zone-r').setAttribute('d', describeArc(mid2, ARC_END));
+
+  // Fill arc setup
+  const fill = document.getElementById('arc-fill');
+  fill.setAttribute('d', fullArc);
+  const arcLen = Math.PI * R * ARC_SWEEP / 180;
+  fill.style.strokeDasharray = arcLen;
+  fill.style.strokeDashoffset = arcLen;
+  fill._len = arcLen;
+
+  // Ticks
+  const ticks = document.getElementById('ticks');
+  const labels = document.getElementById('speed-labels');
+  ticks.innerHTML = ''; labels.innerHTML = '';
+
+  const numMajor = 11; // 0 to 220 in steps of 22, but we label 0,40,80,120,160,200 etc
+  for (let i = 0; i <= numMajor * 4; i++) {
+    const frac = i / (numMajor * 4);
+    const deg = ARC_START + frac * ARC_SWEEP;
+    const isMajor = i % 4 === 0;
+    const isMed = i % 2 === 0;
+    const innerR = isMajor ? R - 14 : isMed ? R - 9 : R - 6;
+    const outerR = R + 5;
+    const p1 = polarToXY(deg, innerR), p2 = polarToXY(deg, outerR);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+    line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+    line.setAttribute('stroke', isMajor ? '#3a3a3a' : '#252525');
+    line.setAttribute('stroke-width', isMajor ? '1.5' : '1');
+    ticks.appendChild(line);
+
+    if (isMajor) {
+      const maxVal = maxForUnit[unit];
+      const val = Math.round(frac * maxVal);
+      const lp = polarToXY(deg, R - 24);
+      const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+      text.setAttribute('x', lp.x); text.setAttribute('y', lp.y);
+      text.setAttribute('dominant-baseline','middle');
+      text.textContent = val;
+      labels.appendChild(text);
+    }
+  }
+}
+
+function updateGauge(fraction) {
+  const fill = document.getElementById('arc-fill');
+  const len = fill._len || 1;
+  fill.style.strokeDashoffset = len * (1 - Math.min(1, fraction));
+
+  // Update needle
+  const deg = ARC_START + Math.min(1, fraction) * ARC_SWEEP;
+  const tip = polarToXY(deg, R - 18);
+  const base = polarToXY(deg + 180, 12);
+  const needle = document.getElementById('needle');
+  needle.setAttribute('x1', base.x.toFixed(2)); needle.setAttribute('y1', base.y.toFixed(2));
+  needle.setAttribute('x2', tip.x.toFixed(2));  needle.setAttribute('y2', tip.y.toFixed(2));
+
+  // Fill color shifts with speed
+  const pct = Math.min(1, fraction);
+  if (pct > 0.8) {
+    fill.style.stroke = '#ff4444';
+    needle.style.stroke = '#ff4444';
+  } else if (pct > 0.5) {
+    fill.style.stroke = '#ff9500';
+    needle.style.stroke = '#ff9500';
+  } else {
+    fill.style.stroke = '#e8ff47';
+    needle.style.stroke = '#e8ff47';
+  }
+}
+
+// ── Units ─────────────────────────────────────────────────────
+function setUnit(u) {
+  unit = u;
+  try { localStorage.setItem('velox-unit', u); } catch(e){}
+  ['kmh','mph','ms'].forEach(id =>
+    document.getElementById('btn-'+id).classList.toggle('active', id===u));
+  buildGauge();
+  refreshDisplay();
+}
+
+function refreshDisplay() {
+  const spd = toDisplay(currentSpeedMS);
+  const el = document.getElementById('speed-display');
+  el.textContent = spd;
+  el.classList.remove('moving','fast');
+  const frac = spd / maxForUnit[unit];
+  if (frac > 0.8) el.classList.add('fast');
+  else if (spd > 0) el.classList.add('moving');
+  updateGauge(frac);
+  document.getElementById('stat-max').textContent = toDisplay(maxSpeed);
+  const avg = speedSamples.length ? speedSamples.reduce((a,b)=>a+b,0)/speedSamples.length : 0;
+  document.getElementById('stat-avg').textContent = toDisplay(avg);
+}
+
+// ── Compass ───────────────────────────────────────────────────
+const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+function degToCompass(d) { return dirs[Math.round(d/22.5)%16]; }
+
+// ── Signal ────────────────────────────────────────────────────
+function updateSignal(acc) {
+  const fill = document.getElementById('signal-fill');
+  const val = document.getElementById('signal-val');
+  const dot = document.getElementById('sat-dot');
+  const lbl = document.getElementById('sat-label');
+  if (acc == null) {
+    fill.style.width='0%'; val.textContent='NO LOCK';
+    dot.classList.remove('locked'); lbl.textContent='NO SAT'; return;
+  }
+  const pct = Math.max(0, Math.min(100, 100-(acc-3)*(100/97)));
+  fill.style.width = pct.toFixed(0)+'%';
+  val.textContent = '±'+Math.round(acc)+'m';
+  dot.classList.add('locked');
+  lbl.textContent = acc < 10 ? 'LOCK ✓' : acc < 30 ? 'WEAK' : 'POOR';
+}
+
+// ── GPS ───────────────────────────────────────────────────────
+function onPosition(pos) {
+  const c = pos.coords;
+  currentSpeedMS = (c.speed != null && c.speed >= 0) ? c.speed : 0;
+  if (currentSpeedMS > maxSpeed) maxSpeed = currentSpeedMS;
+  speedSamples.push(currentSpeedMS);
+  if (speedSamples.length > 60) speedSamples.shift();
+  if (c.heading != null && !isNaN(c.heading))
+    document.getElementById('stat-hdg').textContent = degToCompass(c.heading);
+  if (c.altitude != null)
+    document.getElementById('stat-alt').textContent = Math.round(c.altitude);
+  updateSignal(c.accuracy);
+  refreshDisplay();
+  document.getElementById('error-msg').textContent = '';
+}
+
+function onError(err) {
+  const msgs = {1:'PERMISSION DENIED',2:'POSITION UNAVAILABLE',3:'GPS TIMEOUT'};
+  document.getElementById('error-msg').textContent = msgs[err.code]||'GPS ERROR';
+  updateSignal(null);
+}
+
+function toggleTracking() { tracking ? stopTracking() : startTracking(); }
+
+function startTracking() {
+  if (!navigator.geolocation) {
+    document.getElementById('error-msg').textContent='GEOLOCATION NOT SUPPORTED'; return;
+  }
+  tracking=true; maxSpeed=0; speedSamples=[]; currentSpeedMS=0;
+  refreshDisplay();
+  document.getElementById('start-btn').innerHTML='<span class="sdot on" id="sdot"></span>STOP TRACKING';
+  document.getElementById('start-btn').classList.add('tracking');
+  watchId = navigator.geolocation.watchPosition(onPosition, onError,
+    {enableHighAccuracy:true, maximumAge:0, timeout:15000});
+}
+
+function stopTracking() {
+  tracking=false;
+  if (watchId!==null) { navigator.geolocation.clearWatch(watchId); watchId=null; }
+  currentSpeedMS=0; refreshDisplay(); updateSignal(null);
+  document.getElementById('start-btn').innerHTML='<span class="sdot" id="sdot"></span>START TRACKING';
+  document.getElementById('start-btn').classList.remove('tracking');
+  document.getElementById('stat-hdg').textContent='—';
+}
+
+// ── PWA Install ───────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  try { if (!localStorage.getItem('velox-nodismiss'))
+    document.getElementById('install-banner').classList.add('visible');
+  } catch(e) {}
+});
+function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => {
+    deferredPrompt=null;
+    document.getElementById('install-banner').classList.remove('visible');
+  });
+}
+function dismissInstall() {
+  try { localStorage.setItem('velox-nodismiss','1'); } catch(e){}
+  document.getElementById('install-banner').classList.remove('visible');
+}
+
+// ── Inline Service Worker ─────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  const sw = "const CACHE = 'velox-v2';\nconst ASSETS = ['/'];\nself.addEventListener('install', e => e.waitUntil(\n  caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())\n));\nself.addEventListener('activate', e => e.waitUntil(\n  caches.keys().then(keys =>\n    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))\n  ).then(() => self.clients.claim())\n));\nself.addEventListener('fetch', e => e.respondWith(\n  caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {\n    if (res && res.status === 200) {\n      const clone = res.clone();\n      caches.open(CACHE).then(c => c.put(e.request, clone));\n    }\n    return res;\n  }))\n));";
+  const blob = new Blob([sw], {type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+}
+
+// ── Wake Lock (keep screen on while tracking) ─────────────────
+let wakeLock = null;
+async function requestWakeLock() {
+  if ('wakeLock' in navigator) {
+    try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+  }
+}
+async function releaseWakeLock() {
+  if (wakeLock) { try { await wakeLock.release(); wakeLock=null; } catch(e){} }
+}
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState==='visible' && tracking) await requestWakeLock();
+});
+
+// Override startTracking to request wake lock
+const _startTracking = startTracking;
+startTracking = function() { _startTracking(); requestWakeLock(); };
+const _stopTracking = stopTracking;
+stopTracking = function() { _stopTracking(); releaseWakeLock(); };
+
+// ── Init ──────────────────────────────────────────────────────
+setUnit(unit);
+buildGauge();
+refreshDisplay();
+</script>
+</body>
+</html>
