@@ -148,6 +148,8 @@ body::before{
   text-align:center;user-select:none;
 }
 
+
+
 /* ── Install banner ── */
 #install-banner{
   display:none;position:fixed;bottom:0;left:0;right:0;
@@ -191,7 +193,7 @@ body::before{
     <path id="arc-zone-r" d="" stroke="rgba(255,60,60,0.15)"  stroke-width="4" fill="none" stroke-linecap="round"/>
     <path id="arc-fill" d="" stroke="#e8ff47" stroke-width="4" fill="none" stroke-linecap="round"/>
     <g id="ticks"></g>
-    <g id="speed-labels" font-family="'Space Mono',monospace" font-size="8" fill="#e8ff47" text-anchor="middle"></g>
+    <g id="speed-labels" font-family="'Space Mono',monospace" font-size="8" text-anchor="middle"></g>
     <line id="needle" x1="150" y1="170" x2="150" y2="170" stroke="#e8ff47" stroke-width="2" stroke-linecap="round"/>
     <circle cx="150" cy="170" r="6" fill="#1a1a1a" stroke="#333" stroke-width="1.5"/>
     <circle cx="150" cy="170" r="3" fill="#e8ff47"/>
@@ -231,6 +233,8 @@ body::before{
 
 <div class="footer">VELOX · GNSS SPEEDOMETER · GPS + GLONASS + GALILEO + BEIDOU</div>
 
+
+
 <div id="install-banner">
   <span>ADD VELOX TO HOME SCREEN</span>
   <div style="display:flex;gap:8px">
@@ -251,14 +255,7 @@ let maxSpeed = 0, speedSamples = [], currentSpeedMS = 0;
 let deferredPrompt = null;
 
 // ── Smooth display state ─────────────────────────────────────
-// displayedSpeed tracks the currently shown integer value (in display units).
-// Each animation frame it steps ±1 toward the real target.
-let displayedSpeed = 0;       // integer, in current display units
-let smoothRafId = null;
-let lastStepTime = 0;
-// Step interval in ms: faster at higher speed difference for snappiness,
-// but limited so the digit never jumps more than 1 at a time.
-const STEP_MS = 60; // ~16 fps of stepping feels smooth without being sluggish
+let displayedSpeed = 0;
 
 const convert = { kmh: v => v*3.6, mph: v => v*2.23694, ms: v => v };
 const maxForUnit = { kmh: 220, mph: 140, ms: 60 };
@@ -323,6 +320,8 @@ function buildGauge() {
       const text = document.createElementNS('http://www.w3.org/2000/svg','text');
       text.setAttribute('x', lp.x); text.setAttribute('y', lp.y);
       text.setAttribute('dominant-baseline','middle');
+      text.setAttribute('data-val', val);
+      text.setAttribute('fill', '#f0f0f0'); // white at rest
       text.textContent = val;
       labels.appendChild(text);
     }
@@ -342,36 +341,63 @@ function updateGauge(fraction) {
   needle.setAttribute('x2', tip.x.toFixed(2));  needle.setAttribute('y2', tip.y.toFixed(2));
 
   const pct = Math.min(1, fraction);
-  if (pct > 0.8) {
+  if (pct > 0.818) {
     fill.style.stroke = '#ff4444';
     needle.style.stroke = '#ff4444';
-  } else if (pct > 0.5) {
-    fill.style.stroke = '#ff9500';
-    needle.style.stroke = '#ff9500';
   } else {
     fill.style.stroke = '#e8ff47';
     needle.style.stroke = '#e8ff47';
   }
+
+  // ── Label colour sweep ──
+  // Each label turns yellow when needle passes its value, white when it recedes.
+  // We interpolate per-label so the transition is smooth rather than a hard cut.
+  const currentDisplayVal = fraction * maxForUnit[unit]; // speed in display units
+  const labels = document.getElementById('speed-labels');
+  if (labels) {
+    Array.from(labels.children).forEach(el => {
+      const labelVal = parseFloat(el.getAttribute('data-val'));
+      // Blend window: label fully yellow at (val - 8), fully white at (val + 4)
+      const t = Math.min(1, Math.max(0, (currentDisplayVal - labelVal + 8) / 12));
+      // Interpolate white (#f0f0f0) → yellow (#e8ff47)
+      const r = Math.round(0xf0 + (0xe8 - 0xf0) * t);
+      const g = Math.round(0xf0 + (0xff - 0xf0) * t);
+      const b = Math.round(0xf0 + (0x47 - 0xf0) * t);
+      el.setAttribute('fill', `rgb(${r},${g},${b})`);
+    });
+  }
 }
 
 // ── Smooth Animation Loop ─────────────────────────────────────
-// Steps displayedSpeed by 1 toward target each STEP_MS milliseconds.
-// This makes the number rise/fall one digit at a time, never jumping.
+// needleSpeed: continuous float in display units (e.g. 47.4 km/h)
+// displayedSpeed: integer shown on screen (rounds from needleSpeed)
+// Needle steps 0.2 display-units per frame toward target — silky smooth.
+let needleSpeed = 0;  // float, in current display units
+let smoothRafId = null;
+
+const NEEDLE_STEP = 0.2; // units per frame at 60fps base
+// Scale step by elapsed time so it's frame-rate independent
+let lastTickTime = 0;
+
 function startSmoothLoop() {
-  if (smoothRafId) return; // already running
-  lastStepTime = performance.now();
+  if (smoothRafId) return;
+  lastTickTime = performance.now();
 
   function tick(now) {
-    const target = toDisplay(currentSpeedMS);
-    const elapsed = now - lastStepTime;
+    const dt = Math.min((now - lastTickTime) / (1000 / 60), 4); // frames elapsed, capped
+    lastTickTime = now;
 
-    if (elapsed >= STEP_MS && displayedSpeed !== target) {
-      // Step exactly 1 toward target
-      if (displayedSpeed < target) displayedSpeed++;
-      else displayedSpeed--;
-      lastStepTime = now;
-      renderDisplay(displayedSpeed);
+    const target = convert[unit](currentSpeedMS); // exact float target
+    const diff = target - needleSpeed;
+
+    if (Math.abs(diff) < NEEDLE_STEP * dt) {
+      needleSpeed = target; // snap when very close
+    } else {
+      needleSpeed += Math.sign(diff) * NEEDLE_STEP * dt;
     }
+
+    displayedSpeed = Math.round(needleSpeed);
+    renderDisplay(needleSpeed, displayedSpeed);
 
     smoothRafId = requestAnimationFrame(tick);
   }
@@ -382,13 +408,13 @@ function stopSmoothLoop() {
   if (smoothRafId) { cancelAnimationFrame(smoothRafId); smoothRafId = null; }
 }
 
-function renderDisplay(spd) {
+function renderDisplay(floatSpd, intSpd) {
   const el = document.getElementById('speed-display');
-  el.textContent = spd;
+  el.textContent = intSpd;
   el.classList.remove('moving','fast');
-  const frac = spd / maxForUnit[unit];
-  if (frac > 0.8) el.classList.add('fast');
-  else if (spd > 0) el.classList.add('moving');
+  const frac = floatSpd / maxForUnit[unit]; // needle uses float for smooth arc
+  if (frac > 0.818) el.classList.add('fast');
+  else if (floatSpd > 0) el.classList.add('moving');
   updateGauge(frac);
 }
 
@@ -398,11 +424,12 @@ function setUnit(u) {
   try { localStorage.setItem('velox-unit', u); } catch(e){}
   ['kmh','mph','ms'].forEach(id =>
     document.getElementById('btn-'+id).classList.toggle('active', id===u));
-  // Snap displayed speed to new unit immediately to avoid long wind-down/up
-  displayedSpeed = toDisplay(currentSpeedMS);
+  // Snap needle to new unit immediately to avoid long wind-down/up
+  needleSpeed = convert[unit](currentSpeedMS);
+  displayedSpeed = Math.round(needleSpeed);
   buildGauge();
   refreshStats();
-  renderDisplay(displayedSpeed);
+  renderDisplay(needleSpeed, displayedSpeed);
 }
 
 function refreshStats() {
@@ -473,8 +500,8 @@ function startTracking() {
   }
   tracking = true;
   maxSpeed = 0; speedSamples = []; currentSpeedMS = 0;
-  displayedSpeed = 0;
-  renderDisplay(0);
+  needleSpeed = 0; displayedSpeed = 0;
+  renderDisplay(0, 0);
   refreshStats();
   document.getElementById('start-btn').innerHTML='<span class="sdot on" id="sdot"></span>STOP TRACKING';
   document.getElementById('start-btn').classList.add('tracking');
@@ -491,7 +518,8 @@ function stopTracking() {
   // Let the smooth loop wind display down to 0 naturally, then stop
   // We keep the loop running until it reaches 0
   const waitForZero = setInterval(() => {
-    if (displayedSpeed === 0) {
+    if (needleSpeed <= 0) {
+      needleSpeed = 0; displayedSpeed = 0;
       clearInterval(waitForZero);
       stopSmoothLoop();
     }
@@ -577,7 +605,7 @@ document.addEventListener('webkitfullscreenchange', () => {
 // ── Init ──────────────────────────────────────────────────────
 setUnit(unit);
 buildGauge();
-renderDisplay(0);
+renderDisplay(0, 0);
 </script>
 </body>
 </html>
