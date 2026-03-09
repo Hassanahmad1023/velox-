@@ -72,7 +72,7 @@
     {
       "src": "Screenshort.jpeg",
       "type": "image/jpeg",
-      "sizes": "1280x720",
+      "sizes": "720x1280",
       "form_factor": "narrow",
       "label": "VELOX GPS Speedometer"
     }
