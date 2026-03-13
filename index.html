@@ -15,7 +15,7 @@
 <title>VELOX — GPS Speed</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none;}
 :root{
   --bg:#0a0a0a;--border:#1e1e1e;--accent:#e8ff47;
   --muted:#333;--text:#f0f0f0;--dim:#555;--red:#ff4444;
@@ -35,7 +35,7 @@ html,body{
 }
 body{
   display:flex;flex-direction:column;align-items:center;
-  justify-content:center;min-height:100svh;padding:20px;position:relative;
+  justify-content:center;min-height:100svh;padding:20px;padding-bottom:36px;position:relative;
 }
 body::before{
   content:'';position:fixed;inset:0;pointer-events:none;
@@ -43,7 +43,6 @@ body::before{
     linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
   background-size:40px 40px;
 }
-/* ── Header ── */
 .header{
   position:absolute;top:0;left:0;right:0;
   display:flex;align-items:center;justify-content:space-between;
@@ -65,7 +64,6 @@ body::before{
 :root.light .sat-dot{background:#fff;}
 :root.light .sat-dot.locked{background:#e8ff47;}
 
-/* ── Gauge ── */
 .gauge-wrap{
   position:relative;
   width:min(320px, 90vw);
@@ -75,7 +73,6 @@ body::before{
 #gauge-svg{width:100%;height:100%;overflow:visible;}
 #arc-fill{transition:opacity 0.4s ease;}
 
-/* ── Speed ── */
 .speed-block{text-align:center;line-height:1;margin-bottom:2px;position:relative;}
 .speed-num{
   font-family:'Bebas Neue',sans-serif;
@@ -102,7 +99,6 @@ body::before{
 :root.light .unit-label:hover:not(.active){color:#111;border-color:#999;}
 .unit-label:hover:not(.active){color:#888;border-color:var(--border);}
 
-/* ── Stats grid ── */
 .stats{
   width:100%;display:grid;
   grid-template-columns:1fr 1px 1fr 1px 1fr 1px 1fr;
@@ -116,7 +112,6 @@ body::before{
 }
 .stat-label{font-size:8px;color:var(--dim);letter-spacing:0.18em;text-transform:uppercase;}
 
-/* ── Signal ── */
 .signal-row{
   width:100%;display:flex;align-items:center;
   gap:10px;margin-bottom:16px;
@@ -126,7 +121,6 @@ body::before{
 .signal-fill{height:100%;background:var(--accent);transition:width 0.6s ease;width:0%;}
 .signal-val{font-size:9px;color:var(--dim);white-space:nowrap;min-width:52px;text-align:right;}
 
-/* ── Button ── */
 .start-btn{
   width:100%;padding:15px;
   background:#e8ff47;
@@ -146,7 +140,6 @@ body::before{
   color:var(--text);
 }
 
-/* ── Status dot ── */
 .sdot{
   width:6px;height:6px;border-radius:50%;background:var(--dim);
   display:inline-block;margin-right:8px;transition:background 0.3s;vertical-align:middle;
@@ -155,20 +148,11 @@ body::before{
 :root.light .start-btn .sdot.on{background:#e8ff47;box-shadow:0 0 6px #e8ff47;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 
-/* ── Error ── */
 .error-msg{
   font-size:9px;color:var(--red);letter-spacing:0.15em;
   text-align:center;margin-top:8px;min-height:14px;
 }
 
-/* ── Footer ── */
-.footer{
-  position:absolute;bottom:14px;left:0;right:0;
-  font-size:8px;color:#252525;letter-spacing:0.2em;
-  text-align:center;user-select:none;
-}
-
-/* ── Install banner ── */
 #install-banner{
   display:none;position:fixed;bottom:0;left:0;right:0;
   background:var(--bg);border-top:1px solid var(--border);
@@ -187,11 +171,9 @@ body::before{
   padding:7px 9px;cursor:pointer;
 }
 
-/* ── Speed limit warning flash ── */
 @keyframes warnFlash{0%,100%{opacity:0}50%{opacity:1}}
 .warn-flash{animation:warnFlash 0.5s ease 3;}
 
-/* ── Theme toggle ── */
 #theme-btn{
   position:fixed;bottom:18px;left:18px;
   font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.1em;
@@ -202,7 +184,6 @@ body::before{
 }
 :root.light #theme-btn{border-color:#bbb;color:#555;}
 #theme-btn:hover{color:var(--accent);border-color:var(--accent);}
-
 </style>
 </head>
 <body>
@@ -217,16 +198,15 @@ body::before{
 
 <div class="gauge-wrap">
   <svg id="gauge-svg" viewBox="0 0 300 200">
-    <path id="arc-track" d="" stroke="#222" stroke-width="3" fill="none" stroke-linecap="butt" id="arc-track"/>
+    <path id="arc-track" d="" stroke="#222" stroke-width="3" fill="none" stroke-linecap="butt"/>
     <path id="arc-fill" d="" stroke="#e8ff47" stroke-width="8" fill="none" stroke-linecap="butt"/>
     <g id="ticks"></g>
     <g id="speed-labels" font-family="'Space Mono',monospace" font-size="10" font-weight="bold" text-anchor="middle"></g>
     <line id="needle" x1="150" y1="170" x2="150" y2="170" stroke="#e8ff47" stroke-width="3" stroke-linecap="round"/>
     <circle cx="150" cy="170" r="7" fill="var(--pivot-bg)" stroke="var(--pivot-ring)" stroke-width="1.5"/>
     <circle id="needle-dot" cx="150" cy="170" r="3.5" fill="#e8ff47"/>
-    <!-- Direction text inside gauge, just above pivot -->
-    <text id="direction-text" x="150" y="152" text-anchor="middle" dominant-baseline="middle"
-      font-family="'Space Mono',monospace" font-size="9" fill="var(--dir-text)" letter-spacing="2">—</text>
+    <text id="direction-text" x="150" y="128" text-anchor="middle" dominant-baseline="middle"
+      font-family="'Space Mono',monospace" font-size="10" font-weight="700" fill="#888" letter-spacing="3">—</text>
   </svg>
 </div>
 
@@ -245,7 +225,7 @@ body::before{
   <div class="stat-divider"></div>
   <div class="stat"><span class="stat-val" id="stat-avg">0</span><span class="stat-label">AVG</span></div>
   <div class="stat-divider"></div>
-  <div class="stat"><span class="stat-val" id="stat-dist">0.00</span><span class="stat-label" id="dist-label">DIST KM</span></div>
+  <div class="stat"><span class="stat-val" id="stat-dist">0.00</span><span class="stat-label">DIST KM</span></div>
   <div class="stat-divider"></div>
   <div class="stat"><span class="stat-val" id="stat-alt">—</span><span class="stat-label">ALT M</span></div>
 </div>
@@ -260,8 +240,6 @@ body::before{
   <span class="sdot" id="sdot"></span>START TRACKING
 </button>
 <div class="error-msg" id="error-msg"></div>
-
-<div class="footer">VELOX · GNSS SPEEDOMETER · GPS + GLONASS + GALILEO + BEIDOU</div>
 
 <div id="install-banner">
   <span>ADD VELOX TO HOME SCREEN</span>
@@ -281,56 +259,35 @@ const ARC_START = 240, ARC_END = 480, ARC_SWEEP = 240;
 // ── State ────────────────────────────────────────────────────
 let unit = (() => { try { return localStorage.getItem('velox-unit') || 'kmh'; } catch(e) { return 'kmh'; } })();
 let tracking = false, watchId = null;
-let maxSpeed = 0, speedSamples = [], currentSpeedMS = 0;
+let maxSpeed = 0, currentSpeedMS = 0;
 let deferredPrompt = null;
 
-// ── Distance state (GPS-based Haversine) ─────────────────────
-let lastLat = null, lastLon = null, totalDistKm = 0, totalElapsedSec = 0;
+// ── Distance & time state ────────────────────────────────────
+// Uses GPS pos.timestamp (ms) for real elapsed time — no fake tick counting
+let lastLat = null, lastLon = null, lastTimestamp = null;
+let totalDistKm = 0;
+let totalMovingTimeSec = 0; // only time where speed > 0 (moving average)
 
 // ── Smooth display state ─────────────────────────────────────
 let displayedSpeed = 0;
+let needleSpeed = 0;
 
 const convert = { kmh: v => v*3.6, mph: v => v*2.23694, ms: v => v };
-// Physical needle max (arc range stays the same as original)
 const maxForUnit = { kmh: 220, mph: 140, ms: 60 };
-
-// Extended logical max — beyond breakpoint, scale compresses
-// KMH: 0–160 linear, 160–280 compressed into remaining arc
-// MPH: 0–100 linear, 100–180 compressed into remaining arc
-// MS:  linear throughout (no compression)
 const logicalMax = { kmh: 280, mph: 180, ms: 60 };
 const breakpoint = { kmh: 160, mph: 100, ms: 60 };
 
-// Non-linear mapping: speed value → arc fraction [0,1]
-// Below breakpoint: linear. Above: compressed (double density).
 function speedToFrac(val) {
   const bp = breakpoint[unit];
   const lmax = logicalMax[unit];
   const pmax = maxForUnit[unit];
-  // Arc fraction that the breakpoint occupies (using linear physical scale)
-  const bpFrac = bp / pmax; // e.g. 160/220 ≈ 0.727
+  const bpFrac = bp / pmax;
   if (val <= bp) {
     return (val / bp) * bpFrac;
   } else {
-    // Remaining arc: from bpFrac to 1.0
     const remainArc = 1 - bpFrac;
     const remainVal = lmax - bp;
     return bpFrac + ((val - bp) / remainVal) * remainArc;
-  }
-}
-
-// Inverse: arc fraction → speed value (for needle speed reading)
-function fracToSpeed(frac) {
-  const bp = breakpoint[unit];
-  const lmax = logicalMax[unit];
-  const pmax = maxForUnit[unit];
-  const bpFrac = bp / pmax;
-  if (frac <= bpFrac) {
-    return (frac / bpFrac) * bp;
-  } else {
-    const remainArc = 1 - bpFrac;
-    const remainVal = lmax - bp;
-    return bp + ((frac - bpFrac) / remainArc) * remainVal;
   }
 }
 
@@ -341,12 +298,6 @@ const gaugeLabels = {
 };
 
 function toDisplay(ms) { return Math.round(convert[unit](ms)); }
-
-// ── Distance label (always km) ────────────────────────────────
-function updateDistLabel() {
-  // Distance always shown in km regardless of speed unit
-  document.getElementById('dist-label').textContent = 'DIST KM';
-}
 
 // ── Haversine distance (km) ───────────────────────────────────
 function haversine(lat1, lon1, lat2, lon2) {
@@ -379,7 +330,6 @@ function buildGauge() {
   const trackEl = document.getElementById('arc-track');
   trackEl.setAttribute('d', fullArc);
   trackEl.setAttribute('stroke', isLight ? '#ddd' : '#222');
-  // Set needle and dot initial color on build/theme-switch
   const needleEl = document.getElementById('needle');
   const dotEl = document.getElementById('needle-dot');
   if (needleEl) needleEl.style.stroke = isLight ? '#111111' : '#e8ff47';
@@ -397,8 +347,6 @@ function buildGauge() {
   ticks.innerHTML = ''; labels.innerHTML = '';
 
   const labelVals = gaugeLabels[unit];
-
-  // Minor ticks: place at every label position + midpoints between labels
   const tickVals = new Set();
   labelVals.forEach(v => tickVals.add(v));
   for (let i = 0; i < labelVals.length - 1; i++) {
@@ -422,7 +370,6 @@ function buildGauge() {
     ticks.appendChild(line);
   });
 
-  // Draw labels at non-linear positions
   labelVals.forEach(val => {
     const frac = speedToFrac(val);
     const deg = ARC_START + frac * ARC_SWEEP;
@@ -438,12 +385,10 @@ function buildGauge() {
 }
 
 function updateGauge(speedVal) {
-  // speedVal is in display units (km/h, mph, or m/s)
   const frac = Math.min(1, speedToFrac(speedVal));
   const fill = document.getElementById('arc-fill');
   const len = fill._len || 1;
   fill.style.strokeDashoffset = len * (1 - frac);
-  // Hide arc-fill completely at rest — clean minimal look
   fill.style.opacity = speedVal > 0 ? '1' : '0';
 
   const deg = ARC_START + frac * ARC_SWEEP;
@@ -453,7 +398,6 @@ function updateGauge(speedVal) {
   needle.setAttribute('x1', base.x.toFixed(2)); needle.setAttribute('y1', base.y.toFixed(2));
   needle.setAttribute('x2', tip.x.toFixed(2));  needle.setAttribute('y2', tip.y.toFixed(2));
 
-  // Red zone: above breakpoint; light mode uses different colors
   const bp = breakpoint[unit];
   const isLight = document.documentElement.classList.contains('light');
   if (speedVal > bp) {
@@ -474,7 +418,6 @@ function updateGauge(speedVal) {
       const labelVal = parseFloat(el.getAttribute('data-val'));
       const t = Math.min(1, Math.max(0, (speedVal - labelVal + 8) / 12));
       if (lblLight) {
-        // light: idle=#aaa, near needle=#111
         const v = Math.round(0xaa + (0x11 - 0xaa) * t);
         el.setAttribute('fill', `rgb(${v},${v},${v})`);
       } else {
@@ -488,10 +431,13 @@ function updateGauge(speedVal) {
 }
 
 // ── Smooth Animation Loop ─────────────────────────────────────
-let needleSpeed = 0;
 let smoothRafId = null;
-const NEEDLE_STEP = 3.5;
 let lastTickTime = 0;
+
+// Rise fast, fall slowly — asymmetric exponential smoothing
+// Alpha closer to 1 = faster response; closer to 0 = slower/smoother
+const ALPHA_RISE = 0.10; // ~10 frames to reach target going up
+const ALPHA_FALL = 0.04; // ~25 frames to reach target going down (smooth decay)
 
 function startSmoothLoop() {
   if (smoothRafId) return;
@@ -501,13 +447,15 @@ function startSmoothLoop() {
     lastTickTime = now;
     const target = convert[unit](currentSpeedMS);
     const diff = target - needleSpeed;
-    if (Math.abs(diff) < NEEDLE_STEP * dt) {
+    // Pick alpha based on direction; scale by dt so framerate-independent
+    const alpha = diff > 0 ? ALPHA_RISE : ALPHA_FALL;
+    const factor = 1 - Math.pow(1 - alpha, dt);
+    if (Math.abs(diff) < 0.05) {
       needleSpeed = target;
     } else {
-      needleSpeed += Math.sign(diff) * NEEDLE_STEP * dt;
+      needleSpeed += diff * factor;
     }
     displayedSpeed = Math.round(needleSpeed);
-    // Track max from what needle actually shows
     const needleMs = needleSpeed / convert[unit](1);
     if (needleMs > maxSpeed) { maxSpeed = needleMs; refreshStats(); }
     renderDisplay(needleSpeed, displayedSpeed);
@@ -539,19 +487,23 @@ function setUnit(u) {
   needleSpeed = convert[unit](currentSpeedMS);
   displayedSpeed = Math.round(needleSpeed);
   buildGauge();
-  updateDistLabel();
   refreshStats();
   renderDisplay(needleSpeed, displayedSpeed);
 }
 
 function refreshStats() {
   document.getElementById('stat-max').textContent = toDisplay(maxSpeed);
-  // True average: total distance / total time elapsed
-  const avgMs = totalElapsedSec > 0 ? (totalDistKm * 1000) / totalElapsedSec : 0;
+
+  // AVG = total distance / total moving time (true travel average speed)
+  // totalDistKm in km, totalMovingTimeSec in seconds
+  // convert to m/s then to display unit
+  const avgMs = totalMovingTimeSec > 0
+    ? (totalDistKm * 1000) / totalMovingTimeSec
+    : 0;
   document.getElementById('stat-avg').textContent = toDisplay(avgMs);
-  // Distance always in km
+
   document.getElementById('stat-dist').textContent =
-    totalDistKm < 10 ? totalDistKm.toFixed(2) : totalDistKm.toFixed(1);
+    totalDistKm < 10 ? totalDistKm.toFixed(1) : totalDistKm.toFixed(1);
 }
 
 // ── Compass ───────────────────────────────────────────────────
@@ -585,28 +537,36 @@ const GNSS_OPTIONS = {
 function onPosition(pos) {
   const c = pos.coords;
   currentSpeedMS = (c.speed != null && c.speed >= 0) ? c.speed : 0;
-  speedSamples.push(currentSpeedMS);
-  if (speedSamples.length > 60) speedSamples.shift();
 
-  // GPS-based Haversine distance + elapsed time
+  // ── Distance via Haversine (only add segment if moved meaningfully) ──
   if (lastLat !== null && lastLon !== null) {
     const seg = haversine(lastLat, lastLon, c.latitude, c.longitude);
-    if (seg > 0.002) totalDistKm += seg;
+    if (seg > 0.1) totalDistKm += seg; // ignore < 100m jitter
   }
-  // Always accumulate time while tracking (1s GPS interval approx)
-  if (lastLat !== null) totalElapsedSec += 1;
+
+  // ── Time: use GPS timestamps (milliseconds) for accuracy ────────────
+  // Only accumulate time when vehicle is moving (speed > 0.5 m/s ~1.8 km/h)
+  // This gives true "moving average" — distance ÷ time spent moving
+  if (lastTimestamp !== null && currentSpeedMS > 0.5) {
+    const dtSec = (pos.timestamp - lastTimestamp) / 1000;
+    // Guard: only accept intervals that make sense (0.5s – 10s)
+    if (dtSec > 0.5 && dtSec < 10) {
+      totalMovingTimeSec += dtSec;
+    }
+  }
+
   lastLat = c.latitude;
   lastLon = c.longitude;
+  lastTimestamp = pos.timestamp;
 
-  // Direction text inside gauge
+  // Direction
   const dirEl = document.getElementById('direction-text');
   if (c.heading != null && !isNaN(c.heading) && currentSpeedMS > 0.5) {
-    const compassStr = degToCompass(c.heading);
-    dirEl.textContent = compassStr;
-    dirEl.setAttribute('fill', '#888');
+    dirEl.textContent = degToCompass(c.heading);
+    dirEl.setAttribute('fill', document.documentElement.classList.contains('light') ? '#333' : '#aaa');
   } else {
     dirEl.textContent = '—';
-    dirEl.setAttribute('fill', '#555');
+    dirEl.setAttribute('fill', document.documentElement.classList.contains('light') ? '#bbb' : '#444');
   }
 
   if (c.altitude != null)
@@ -630,11 +590,12 @@ function startTracking() {
     document.getElementById('error-msg').textContent='GEOLOCATION NOT SUPPORTED'; return;
   }
   tracking = true;
-  maxSpeed = 0; speedSamples = []; currentSpeedMS = 0;
-  totalDistKm = 0; totalElapsedSec = 0; lastLat = null; lastLon = null;
+  maxSpeed = 0; currentSpeedMS = 0;
+  totalDistKm = 0; totalMovingTimeSec = 0;
+  lastLat = null; lastLon = null; lastTimestamp = null;
   needleSpeed = 0; displayedSpeed = 0;
   document.getElementById('direction-text').textContent = '—';
-  document.getElementById('direction-text').setAttribute('fill','#555');
+  document.getElementById('direction-text').setAttribute('fill', document.documentElement.classList.contains('light') ? '#bbb' : '#444');
   renderDisplay(0, 0);
   refreshStats();
   document.getElementById('start-btn').innerHTML='<span class="sdot on" id="sdot"></span>STOP TRACKING';
@@ -647,9 +608,9 @@ function stopTracking() {
   tracking = false;
   if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
   currentSpeedMS = 0;
-  lastLat = null; lastLon = null;
+  lastLat = null; lastLon = null; lastTimestamp = null;
   document.getElementById('direction-text').textContent = '—';
-  document.getElementById('direction-text').setAttribute('fill','#555');
+  document.getElementById('direction-text').setAttribute('fill', document.documentElement.classList.contains('light') ? '#bbb' : '#444');
   const waitForZero = setInterval(() => {
     if (needleSpeed <= 0) {
       needleSpeed = 0; displayedSpeed = 0;
@@ -708,7 +669,7 @@ startTracking = function() { _startTracking(); requestWakeLock(); };
 const _stopTracking = stopTracking;
 stopTracking = function() { _stopTracking(); releaseWakeLock(); };
 
-// ── Fullscreen API ────────────────────────────────────────────
+// ── Fullscreen ────────────────────────────────────────────────
 function requestFullscreen() {
   const el = document.documentElement;
   const req = el.requestFullscreen || el.webkitRequestFullscreen ||
@@ -726,7 +687,6 @@ document.addEventListener('webkitfullscreenchange', () => {
   if (!document.webkitFullscreenElement && tracking) requestFullscreen();
 });
 
-
 // ── Theme ─────────────────────────────────────────────────────
 function toggleTheme() {
   const root = document.documentElement;
@@ -734,9 +694,8 @@ function toggleTheme() {
   try { localStorage.setItem('velox-theme', isLight ? 'light' : 'dark'); } catch(e){}
   document.querySelector('meta[name="theme-color"]').setAttribute('content', isLight ? '#ffffff' : '#0a0a0a');
   document.getElementById('theme-btn').textContent = isLight ? '☾' : '☀';
-  buildGauge(); // rebuild so arc-track color updates
+  buildGauge();
 }
-// Restore saved theme
 (function(){
   try {
     const saved = localStorage.getItem('velox-theme');
