@@ -75,6 +75,7 @@ body::before{
 .speed-num{
   font-family:'Bebas Neue',sans-serif;
   font-size:clamp(80px,22vw,116px);
+  font-style:italic;
   color:var(--text);letter-spacing:-3px;
   transition:color 0.4s ease;display:block;
 }
@@ -95,6 +96,28 @@ body::before{
 :root.light .unit-label.active{background:#111;border-color:#111;color:#fff;}
 :root.light .unit-label:hover:not(.active){color:#111;border-color:#999;}
 .unit-label:hover:not(.active){color:#888;border-color:var(--border);}
+
+/* ── Minimal mode ─────────────────────────────────────────── */
+.speed-num{cursor:pointer;}
+body.minimal .gauge-wrap{display:none;}
+body.minimal .speed-block{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;margin-bottom:0;
+}
+body.minimal .speed-num{
+  font-style:italic;
+  font-size:clamp(120px,38vw,200px);
+  letter-spacing:-8px;
+}
+body.minimal .unit-row{margin-bottom:22px;}
+/* small tap-hint dot below the number */
+.view-hint{
+  display:block;width:4px;height:4px;border-radius:50%;
+  background:var(--dim);margin:4px auto 0;opacity:0.35;
+  transition:opacity 0.3s;pointer-events:none;
+}
+.speed-block:hover .view-hint,.speed-block:active .view-hint{opacity:0.7;}
+body.minimal .view-hint{background:var(--accent);opacity:0.5;}
 .stats{
   width:100%;display:grid;
   grid-template-columns:1fr 1px 1fr 1px 1fr 1px 1fr;
@@ -193,8 +216,9 @@ body::before{
   </svg>
 </div>
 
-<div class="speed-block">
+<div class="speed-block" onclick="toggleView()" title="Tap to switch view">
   <span class="speed-num" id="speed-display">0</span>
+  <span class="view-hint"></span>
 </div>
 
 <div class="unit-row">
@@ -587,6 +611,19 @@ function toggleTracking() {
   if (tracking) stopTracking(); else startTracking();
 }
 
+// ── View mode (gauge / minimal) ────────────────────────────────
+let viewMode = (() => { try { return localStorage.getItem('velox-view') || 'gauge'; } catch(e) { return 'gauge'; } })();
+
+function applyView() {
+  document.body.classList.toggle('minimal', viewMode === 'minimal');
+}
+
+function toggleView() {
+  viewMode = viewMode === 'gauge' ? 'minimal' : 'gauge';
+  try { localStorage.setItem('velox-view', viewMode); } catch(e) {}
+  applyView();
+}
+
 // ── Unit switching ─────────────────────────────────────────────
 function setUnit(u) {
   unit = u;
@@ -644,6 +681,7 @@ window.addEventListener('beforeinstallprompt', e => {
     }
   } catch(e) {}
   buildGauge();
+  applyView();
   renderDisplay(0, 0);
 })();
 </script>
