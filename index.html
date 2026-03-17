@@ -7,9 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="mobile-web-app-capable" content="yes"/>
-<meta name="description" content="VELOX — Real-time GPS speedometer"/>
+<meta name="description" content="VELOX — Real-time GPS speedometer using satellite positioning"/>
+<meta name="apple-touch-fullscreen" content="yes"/>
 <style>* { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }</style>
 <link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAFEUlEQVR4nO3cXVJbOxCFUXMrT84sMg9GzzwyizznPlBUEcpgc36kbu21BpDYUn/SMVB+ul6vfy8Q6r/ZLwBmEgDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRAtB+zX8Dqfv953v1v/Pr5csAr4ZYnX4x1jCMG/buEsZ8ANpox8PcI4vsE8KCKA3+PIO4TwBc6Dv1nxHCbAG5YafA/EsK/BPDOyoP/kRBeCeCSNfgfpYcQHUDy4H+UGkJkAAb/c2khRAVg8B+XEkJEAAb/e+lhRAVg8B+XEkJUAAb/e2lhRAVg8B+XEkJkAAb/e2lhRAVg8n8iFcJfGY7MZAAAAASUVORK5CYII="/>
 <title>VELOX — GPS Speed</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap');
@@ -17,221 +19,211 @@
 :root{
   --bg:#0a0a0a;--border:#1e1e1e;--accent:#e8ff47;
   --muted:#333;--text:#f0f0f0;--dim:#555;--red:#ff4444;
-  --pivot-bg:#1a1a1a;--pivot-ring:#333;
+  --arc-track:#222;--pivot-bg:#1a1a1a;--pivot-ring:#333;--dir-text:#555;
   --grid-line:rgba(255,255,255,0.013);
-  --road-spd-bg:rgba(10,10,10,0.85);--road-spd-color:#e8ff47;
-  --nav-color:#e8ff47;--nav-glow:rgba(232,255,71,0.5);
 }
 :root.light{
-  --bg:#f4f4f4;--border:#c8c8c8;--accent:#111;
-  --muted:#bbb;--text:#111;--dim:#777;--red:#cc2222;
-  --pivot-bg:#e8e8e8;--pivot-ring:#999;
+  --bg:#f4f4f4;--border:#c8c8c8;--accent:#111111;
+  --muted:#bbb;--text:#111111;--dim:#777;--red:#cc2222;
+  --arc-track:#c8c8c8;--pivot-bg:#e8e8e8;--pivot-ring:#999;--dir-text:#999;
   --grid-line:rgba(0,0,0,0.05);
-  --road-spd-bg:rgba(244,244,244,0.88);--road-spd-color:#111;
-  --nav-color:#111;--nav-glow:rgba(0,0,0,0.25);
 }
-html,body{height:100%;background:var(--bg);color:var(--text);
+html,body{
+  height:100%;background:var(--bg);color:var(--text);
   font-family:'Space Mono',monospace;overflow:hidden;
-  -webkit-font-smoothing:antialiased;touch-action:manipulation;}
-
-/* ── Tab bar ── */
-.tab-bar{position:fixed;top:0;left:0;right:0;z-index:200;
-  display:flex;background:var(--bg);border-bottom:1px solid var(--border);height:44px;}
-.tab{flex:1;display:flex;align-items:center;justify-content:center;
-  font-size:9px;letter-spacing:0.25em;color:var(--dim);cursor:pointer;
-  border-bottom:2px solid transparent;transition:color .2s,border-color .2s;}
-.tab.active{color:var(--accent);border-bottom:2px solid var(--accent);}
-:root.light .tab.active{color:#111;border-bottom-color:#111;}
-
-/* ── Screens ── */
-.screen{position:fixed;inset:0;top:44px;display:none;
-  flex-direction:column;align-items:center;justify-content:center;overflow:hidden;}
-.screen.active{display:flex;}
-
-/* ═══ SPEED SCREEN ═══ */
-#screen-speed{padding:20px;padding-bottom:56px;position:relative;}
-#screen-speed::before{content:'';position:fixed;inset:0;pointer-events:none;
+  -webkit-font-smoothing:antialiased;touch-action:manipulation;
+}
+body{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:100svh;padding:20px;padding-bottom:36px;position:relative;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;
   background-image:linear-gradient(var(--grid-line) 1px,transparent 1px),
     linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
-  background-size:40px 40px;}
-.header{position:absolute;top:0;left:0;right:0;
-  display:flex;align-items:center;justify-content:space-between;padding:10px 20px;}
-.wordmark{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.35em;color:var(--dim);}
-.sat-badge{font-size:9px;letter-spacing:.15em;color:#000;background:#e8ff47;
-  border:1px solid #e8ff47;padding:3px 8px;display:flex;align-items:center;gap:5px;
-  transition:background .3s,border-color .3s,color .3s;}
-.sat-dot{width:5px;height:5px;border-radius:50%;background:#000;transition:background .3s;}
+  background-size:40px 40px;
+}
+.header{
+  position:absolute;top:0;left:0;right:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px;
+}
+.wordmark{
+  font-family:'Bebas Neue',sans-serif;font-size:14px;
+  letter-spacing:0.35em;color:var(--dim);user-select:none;
+}
+.sat-badge{
+  font-size:9px;letter-spacing:0.15em;color:#000;
+  background:#e8ff47;border:1px solid #e8ff47;padding:3px 8px;
+  display:flex;align-items:center;gap:5px;
+  transition:background 0.3s,border-color 0.3s,color 0.3s;
+}
+.sat-dot{width:5px;height:5px;border-radius:50%;background:#000;transition:background 0.3s;}
+.sat-dot.locked{background:#000;box-shadow:none;}
 :root.light .sat-badge{background:#111;border-color:#111;color:#fff;}
 :root.light .sat-dot{background:#fff;}
-.gauge-wrap{position:relative;width:min(320px,90vw);height:min(215px,60.5vw);margin-bottom:-10px;}
+:root.light .sat-dot.locked{background:#e8ff47;}
+.gauge-wrap{
+  position:relative;
+  width:min(320px, 90vw);
+  height:min(215px, 60.5vw);
+  margin-bottom:-10px;
+}
 #gauge-svg{width:100%;height:100%;overflow:visible;}
-#arc-fill{transition:opacity .4s ease;}
-.speed-block{text-align:center;line-height:1;margin-bottom:2px;}
-.speed-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(80px,22vw,116px);
-  color:var(--text);letter-spacing:-3px;transition:color .4s ease;display:block;}
-.speed-num.moving{color:var(--accent);text-shadow:0 0 40px rgba(232,255,71,.2);}
+#arc-fill{transition:opacity 0.4s ease;}
+.speed-block{text-align:center;line-height:1;margin-bottom:2px;position:relative;}
+.speed-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(80px,22vw,116px);
+  color:var(--text);letter-spacing:-3px;
+  transition:color 0.4s ease;display:block;
+}
+.speed-num.moving{color:var(--accent);text-shadow:0 0 40px rgba(232,255,71,0.2);}
 :root.light .speed-num.moving{color:#111;text-shadow:none;}
-.speed-num.fast{color:#ff9500;text-shadow:0 0 40px rgba(255,149,0,.25);}
+.speed-num.fast{color:#ff9500;text-shadow:0 0 40px rgba(255,149,0,0.25);}
 :root.light .speed-num.fast{color:#cc2222;text-shadow:none;}
-.unit-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:22px;}
-.unit-label{font-size:10px;letter-spacing:.25em;color:var(--dim);cursor:pointer;
-  padding:4px 10px;border:1px solid transparent;transition:all .2s;}
+.unit-row{
+  display:flex;align-items:center;justify-content:center;
+  gap:10px;margin-bottom:22px;
+}
+.unit-label{
+  font-size:10px;letter-spacing:0.25em;color:var(--dim);
+  cursor:pointer;padding:4px 10px;border:1px solid transparent;
+  transition:all 0.2s;user-select:none;
+}
 .unit-label.active{color:#000;background:#e8ff47;border-color:#e8ff47;font-weight:700;}
 :root.light .unit-label.active{background:#111;border-color:#111;color:#fff;}
+:root.light .unit-label:hover:not(.active){color:#111;border-color:#999;}
 .unit-label:hover:not(.active){color:#888;border-color:var(--border);}
-.stats{width:100%;display:grid;grid-template-columns:1fr 1px 1fr 1px 1fr 1px 1fr;
-  border:1px solid var(--border);margin-bottom:16px;}
+.stats{
+  width:100%;display:grid;
+  grid-template-columns:1fr 1px 1fr 1px 1fr 1px 1fr;
+  border:1px solid var(--border);margin-bottom:16px;
+}
 .stat-divider{background:var(--border);}
 .stat{padding:12px 8px;text-align:center;}
-.stat-val{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);
-  display:block;line-height:1;margin-bottom:3px;}
-.stat-label{font-size:8px;color:var(--dim);letter-spacing:.18em;text-transform:uppercase;}
-.signal-row{width:100%;display:flex;align-items:center;gap:10px;margin-bottom:16px;}
-.signal-label{font-size:9px;letter-spacing:.2em;color:var(--dim);white-space:nowrap;}
+.stat-val{
+  font-family:'Bebas Neue',sans-serif;font-size:20px;
+  color:var(--text);display:block;line-height:1;margin-bottom:3px;
+}
+.stat-label{font-size:8px;color:var(--dim);letter-spacing:0.18em;text-transform:uppercase;}
+.signal-row{
+  width:100%;display:flex;align-items:center;
+  gap:10px;margin-bottom:16px;
+}
+.signal-label{font-size:9px;letter-spacing:0.2em;color:var(--dim);white-space:nowrap;}
 .signal-track{flex:1;height:2px;background:var(--muted);overflow:hidden;}
-.signal-fill{height:100%;background:var(--accent);transition:width .6s ease;width:0%;}
+.signal-fill{height:100%;background:var(--accent);transition:width 0.6s ease;width:0%;}
 .signal-val{font-size:9px;color:var(--dim);white-space:nowrap;min-width:52px;text-align:right;}
-.start-btn{width:100%;padding:15px;background:#e8ff47;border:1px solid #e8ff47;color:#000;
-  font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.3em;cursor:pointer;
-  transition:background .25s,color .25s,border-color .25s;text-transform:uppercase;}
+.start-btn{
+  width:100%;padding:15px;
+  background:#e8ff47;border:1px solid #e8ff47;color:#000;
+  font-family:'Space Mono',monospace;font-size:11px;
+  letter-spacing:0.3em;cursor:pointer;
+  transition:background 0.25s,color 0.25s,border-color 0.25s;
+  text-transform:uppercase;position:relative;
+}
 :root.light .start-btn{background:#111;border-color:#111;color:#fff;}
 :root.light .start-btn.tracking{background:#f4f4f4;border-color:#c8c8c8;color:#111;}
-.start-btn:active{transform:scale(.99);}
+.start-btn:active{transform:scale(0.99);}
 .start-btn.tracking{background:var(--bg);border:1px solid var(--border);color:var(--text);}
-.sdot{width:6px;height:6px;border-radius:50%;background:var(--dim);
-  display:inline-block;margin-right:8px;transition:background .3s;vertical-align:middle;}
+.sdot{
+  width:6px;height:6px;border-radius:50%;background:var(--dim);
+  display:inline-block;margin-right:8px;transition:background 0.3s;vertical-align:middle;
+}
 .sdot.on{background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 1.5s infinite;}
 :root.light .start-btn .sdot.on{background:#e8ff47;box-shadow:0 0 6px #e8ff47;}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.error-msg{font-size:9px;color:var(--red);letter-spacing:.15em;
-  text-align:center;margin-top:8px;min-height:14px;}
-
-/* ═══ ROAD VIEW SCREEN ═══ */
-#screen-road{position:fixed;inset:0;top:44px;background:#111;}
-
-/* Canvas fills full road screen */
-#road-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
-
-/* Speed overlay top-center */
-.road-hud{position:absolute;top:16px;left:50%;transform:translateX(-50%);
-  z-index:10;pointer-events:none;
-  background:var(--road-spd-bg);border:1px solid var(--border);
-  padding:8px 24px 4px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  display:flex;flex-direction:column;align-items:center;}
-.road-spd{font-family:'Bebas Neue',sans-serif;font-size:clamp(52px,14vw,80px);
-  color:var(--road-spd-color);letter-spacing:-2px;line-height:1;}
-.road-unit{font-size:9px;letter-spacing:.3em;color:var(--dim);margin-top:-2px;}
-
-/* Accuracy badge bottom-right */
-.road-acc{position:absolute;bottom:20px;right:14px;z-index:10;pointer-events:none;
-  background:var(--road-spd-bg);border:1px solid var(--border);
-  padding:5px 10px;font-size:9px;letter-spacing:.15em;color:var(--dim);
-  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
-
-/* No-GPS overlay */
-.road-empty{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;background:var(--bg);gap:14px;}
-.road-empty.hidden{display:none;}
-.road-empty-icon{font-size:44px;opacity:.18;}
-.road-empty-txt{font-size:9px;letter-spacing:.2em;color:var(--dim);text-align:center;line-height:2;}
-
-/* ── Misc ── */
-#install-banner{display:none;position:fixed;bottom:0;left:0;right:0;
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.error-msg{
+  font-size:9px;color:var(--red);letter-spacing:0.15em;
+  text-align:center;margin-top:8px;min-height:14px;
+}
+#install-banner{
+  display:none;position:fixed;bottom:0;left:0;right:0;
   background:var(--bg);border-top:1px solid var(--border);
-  padding:10px 18px;align-items:center;justify-content:space-between;gap:10px;z-index:300;}
+  padding:10px 18px;align-items:center;
+  justify-content:space-between;gap:10px;z-index:100;
+}
 #install-banner.visible{display:flex;}
-#install-banner span{font-size:9px;color:var(--dim);letter-spacing:.15em;}
-#install-btn{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;
-  color:#000;background:var(--accent);border:none;padding:7px 12px;cursor:pointer;}
-#dismiss-btn{font-family:'Space Mono',monospace;font-size:9px;color:var(--dim);
-  background:transparent;border:1px solid var(--border);padding:7px 9px;cursor:pointer;}
-#theme-btn{position:fixed;bottom:18px;left:18px;font-family:'Space Mono',monospace;
-  font-size:12px;letter-spacing:.1em;color:var(--dim);background:transparent;
-  border:1px solid #2a2a2a;padding:8px 10px;cursor:pointer;
-  transition:color .2s,border-color .2s;z-index:250;line-height:1;}
+#install-banner span{font-size:9px;color:var(--dim);letter-spacing:0.15em;}
+#install-btn{
+  font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.2em;
+  color:#000;background:var(--accent);border:none;padding:7px 12px;cursor:pointer;
+}
+#dismiss-btn{
+  font-family:'Space Mono',monospace;font-size:9px;
+  color:var(--dim);background:transparent;border:1px solid var(--border);
+  padding:7px 9px;cursor:pointer;
+}
+@keyframes warnFlash{0%,100%{opacity:0}50%{opacity:1}}
+.warn-flash{animation:warnFlash 0.5s ease 3;}
+#theme-btn{
+  position:fixed;bottom:18px;left:18px;
+  font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.1em;
+  color:var(--dim);background:transparent;
+  border:1px solid #2a2a2a;padding:8px 10px;
+  cursor:pointer;transition:color 0.2s,border-color 0.2s,background 0.2s;
+  z-index:50;line-height:1;
+}
 :root.light #theme-btn{border-color:#bbb;color:#555;}
 #theme-btn:hover{color:var(--accent);border-color:var(--accent);}
 </style>
 </head>
 <body>
 
-<!-- Tab bar -->
-<div class="tab-bar">
-  <div class="tab active" id="tab-speed" onclick="switchTab('speed')">SPEED</div>
-  <div class="tab"        id="tab-road"  onclick="switchTab('road')">ROAD VIEW</div>
-</div>
-
-<!-- ════ SPEED SCREEN ════ -->
-<div class="screen active" id="screen-speed">
-  <div class="header">
-    <div class="wordmark">VELOX</div>
-    <div class="sat-badge">
-      <div class="sat-dot" id="sat-dot"></div>
-      <span id="sat-label">NO SAT</span>
-    </div>
-  </div>
-  <div class="gauge-wrap">
-    <svg id="gauge-svg" viewBox="0 0 300 200">
-      <path id="arc-track" d="" stroke="#222" stroke-width="3" fill="none" stroke-linecap="butt"/>
-      <path id="arc-fill" d="" stroke="#e8ff47" stroke-width="8" fill="none" stroke-linecap="butt"/>
-      <g id="ticks"></g>
-      <g id="speed-labels" font-family="'Space Mono',monospace" font-size="10" font-weight="bold" text-anchor="middle"></g>
-      <line id="needle" x1="150" y1="170" x2="150" y2="170" stroke="#e8ff47" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="150" cy="170" r="7" fill="var(--pivot-bg)" stroke="var(--pivot-ring)" stroke-width="1.5"/>
-      <circle id="needle-dot" cx="150" cy="170" r="3.5" fill="#e8ff47"/>
-      <text id="direction-text" x="150" y="128" text-anchor="middle" dominant-baseline="middle"
-        font-family="'Space Mono',monospace" font-size="10" font-weight="700" fill="#888" letter-spacing="3">—</text>
-    </svg>
-  </div>
-  <div class="speed-block">
-    <span class="speed-num" id="speed-display">0</span>
-  </div>
-  <div class="unit-row">
-    <span class="unit-label active" id="btn-kmh" onclick="setUnit('kmh')">KM/H</span>
-    <span class="unit-label"        id="btn-mph" onclick="setUnit('mph')">MPH</span>
-    <span class="unit-label"        id="btn-ms"  onclick="setUnit('ms')">M/S</span>
-  </div>
-  <div class="stats">
-    <div class="stat"><span class="stat-val" id="stat-max">0</span><span class="stat-label">MAX</span></div>
-    <div class="stat-divider"></div>
-    <div class="stat"><span class="stat-val" id="stat-avg">0</span><span class="stat-label">AVG</span></div>
-    <div class="stat-divider"></div>
-    <div class="stat"><span class="stat-val" id="stat-dist">0.00</span><span class="stat-label">DIST KM</span></div>
-    <div class="stat-divider"></div>
-    <div class="stat"><span class="stat-val" id="stat-alt">—</span><span class="stat-label">ALT M</span></div>
-  </div>
-  <div class="signal-row">
-    <span class="signal-label">GNSS</span>
-    <div class="signal-track"><div class="signal-fill" id="signal-fill"></div></div>
-    <span class="signal-val" id="signal-val">NO LOCK</span>
-  </div>
-  <button class="start-btn" id="start-btn" onclick="toggleTracking()">
-    <span class="sdot" id="sdot"></span>START TRACKING
-  </button>
-  <div class="error-msg" id="error-msg"></div>
-</div>
-
-<!-- ════ ROAD VIEW SCREEN ════ -->
-<div class="screen" id="screen-road">
-  <canvas id="road-canvas"></canvas>
-
-  <!-- Speed HUD -->
-  <div class="road-hud">
-    <span class="road-spd" id="road-spd">0</span>
-    <span class="road-unit" id="road-unit">KM/H</span>
-  </div>
-
-  <!-- Accuracy -->
-  <div class="road-acc" id="road-acc">NO LOCK</div>
-
-  <!-- No GPS placeholder -->
-  <div class="road-empty" id="road-empty">
-    <div class="road-empty-icon">◎</div>
-    <div class="road-empty-txt">START TRACKING<br>TO SEE ROAD VIEW</div>
+<div class="header">
+  <div class="wordmark">VELOX</div>
+  <div class="sat-badge">
+    <div class="sat-dot" id="sat-dot"></div>
+    <span id="sat-label">NO SAT</span>
   </div>
 </div>
 
-<!-- PWA -->
+<div class="gauge-wrap">
+  <svg id="gauge-svg" viewBox="0 0 300 200">
+    <path id="arc-track" d="" stroke="#222" stroke-width="3" fill="none" stroke-linecap="butt"/>
+    <path id="arc-fill" d="" stroke="#e8ff47" stroke-width="8" fill="none" stroke-linecap="butt"/>
+    <g id="ticks"></g>
+    <g id="speed-labels" font-family="'Space Mono',monospace" font-size="10" font-weight="bold" text-anchor="middle"></g>
+    <line id="needle" x1="150" y1="170" x2="150" y2="170" stroke="#e8ff47" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="150" cy="170" r="7" fill="var(--pivot-bg)" stroke="var(--pivot-ring)" stroke-width="1.5"/>
+    <circle id="needle-dot" cx="150" cy="170" r="3.5" fill="#e8ff47"/>
+    <text id="direction-text" x="150" y="128" text-anchor="middle" dominant-baseline="middle"
+      font-family="'Space Mono',monospace" font-size="10" font-weight="700" fill="#888" letter-spacing="3">—</text>
+  </svg>
+</div>
+
+<div class="speed-block">
+  <span class="speed-num" id="speed-display">0</span>
+</div>
+
+<div class="unit-row">
+  <span class="unit-label active" id="btn-kmh" onclick="setUnit('kmh')">KM/H</span>
+  <span class="unit-label"        id="btn-mph" onclick="setUnit('mph')">MPH</span>
+  <span class="unit-label"        id="btn-ms"  onclick="setUnit('ms')">M/S</span>
+</div>
+
+<div class="stats">
+  <div class="stat"><span class="stat-val" id="stat-max">0</span><span class="stat-label">MAX</span></div>
+  <div class="stat-divider"></div>
+  <div class="stat"><span class="stat-val" id="stat-avg">0</span><span class="stat-label">AVG</span></div>
+  <div class="stat-divider"></div>
+  <div class="stat"><span class="stat-val" id="stat-dist">0.00</span><span class="stat-label">DIST KM</span></div>
+  <div class="stat-divider"></div>
+  <div class="stat"><span class="stat-val" id="stat-alt">—</span><span class="stat-label">ALT M</span></div>
+</div>
+
+<div class="signal-row">
+  <span class="signal-label">GNSS</span>
+  <div class="signal-track"><div class="signal-fill" id="signal-fill"></div></div>
+  <span class="signal-val" id="signal-val">NO LOCK</span>
+</div>
+
+<button class="start-btn" id="start-btn" onclick="toggleTracking()">
+  <span class="sdot" id="sdot"></span>START TRACKING
+</button>
+<div class="error-msg" id="error-msg"></div>
+
 <div id="install-banner">
   <span>ADD VELOX TO HOME SCREEN</span>
   <div style="display:flex;gap:8px">
@@ -239,375 +231,270 @@ html,body{height:100%;background:var(--bg);color:var(--text);
     <button id="install-btn" onclick="installApp()">INSTALL</button>
   </div>
 </div>
-<button id="theme-btn" onclick="toggleTheme()">☀</button>
+
+<button id="theme-btn" onclick="toggleTheme()" title="Toggle theme">☀</button>
 
 <script>
-// ═══════════════════════════════════════════════════════
-//  CONSTANTS
-// ═══════════════════════════════════════════════════════
-const CX=150,CY=170,R=138,ARC_START=240,ARC_END=480,ARC_SWEEP=240;
+// ── Constants ────────────────────────────────────────────────
+const CX = 150, CY = 170, R = 138;
+const ARC_START = 240, ARC_END = 480, ARC_SWEEP = 240;
 
-// ═══════════════════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════════════════
-let unit=(()=>{try{return localStorage.getItem('velox-unit')||'kmh'}catch(e){return 'kmh'}})();
-let tracking=false,watchId=null;
-let maxSpeed=0,currentSpeedMS=0;
-let lastLat=null,lastLon=null,totalDistKm=0,speedSamples=[];
-let displayedSpeed=0,needleSpeed=0;
-let currentLat=null,currentLon=null,currentHeading=0;
-let deferredPrompt=null;
+// ── State ────────────────────────────────────────────────────
+let unit = (() => { try { return localStorage.getItem('velox-unit') || 'kmh'; } catch(e) { return 'kmh'; } })();
+let tracking = false, watchId = null;
+let maxSpeed = 0, currentSpeedMS = 0;
+let deferredPrompt = null;
 
-const convert={kmh:v=>v*3.6,mph:v=>v*2.23694,ms:v=>v};
-const maxForUnit={kmh:220,mph:140,ms:60};
-const logicalMax={kmh:280,mph:180,ms:60};
-const breakpoint={kmh:160,mph:100,ms:60};
-const unitLabel={kmh:'KM/H',mph:'MPH',ms:'M/S'};
+// ── Distance & avg state ─────────────────────────────────────
+let lastLat = null, lastLon = null;
+let totalDistKm = 0;
+let speedSamples = [];
 
-const gaugeLabels={
-  kmh:[0,20,40,60,80,100,120,140,160,200,240,280],
-  mph:[0,20,40,60,80,100,140,180],
-  ms:[0,10,20,30,40,50,60]
+// ── Smooth display state ─────────────────────────────────────
+let displayedSpeed = 0;
+let needleSpeed = 0;
+
+const convert = { kmh: v => v*3.6, mph: v => v*2.23694, ms: v => v };
+const maxForUnit = { kmh: 220, mph: 140, ms: 60 };
+const logicalMax = { kmh: 280, mph: 180, ms: 60 };
+const breakpoint = { kmh: 160, mph: 100, ms: 60 };
+
+function speedToFrac(val) {
+  const bp = breakpoint[unit];
+  const lmax = logicalMax[unit];
+  const pmax = maxForUnit[unit];
+  const bpFrac = bp / pmax;
+  if (val <= bp) {
+    return (val / bp) * bpFrac;
+  } else {
+    const remainArc = 1 - bpFrac;
+    const remainVal = lmax - bp;
+    return bpFrac + ((val - bp) / remainVal) * remainArc;
+  }
+}
+
+const gaugeLabels = {
+  kmh: [0,20,40,60,80,100,120,140,160,200,240,280],
+  mph: [0,20,40,60,80,100,140,180],
+  ms:  [0,10,20,30,40,50,60]
 };
 
-function toDisplay(ms){return Math.round(convert[unit](ms));}
+function toDisplay(ms) { return Math.round(convert[unit](ms)); }
 
-function speedToFrac(val){
-  const bp=breakpoint[unit],lmax=logicalMax[unit],pmax=maxForUnit[unit],bpF=bp/pmax;
-  return val<=bp?(val/bp)*bpF:bpF+((val-bp)/(lmax-bp))*(1-bpF);
+// ── Haversine distance (km) ──────────────────────────────────
+function haversine(lat1, lon1, lat2, lon2) {
+  const EARTH_R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+            Math.sin(dLon/2)**2;
+  return EARTH_R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-function haversine(la1,lo1,la2,lo2){
-  const ER=6371,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;
-  const a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
-  return ER*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+// ── Geometry ─────────────────────────────────────────────────
+function polarToXY(deg, r) {
+  const rad = (deg - 90) * Math.PI / 180;
+  return { x: CX + r*Math.cos(rad), y: CY + r*Math.sin(rad) };
 }
 
-// ═══════════════════════════════════════════════════════
-//  GAUGE
-// ═══════════════════════════════════════════════════════
-function polarToXY(deg,r){
-  const rad=(deg-90)*Math.PI/180;
-  return{x:CX+r*Math.cos(rad),y:CY+r*Math.sin(rad)};
-}
-function describeArc(s,e){
-  const a=polarToXY(s,R),b=polarToXY(e,R);
-  return`M ${a.x.toFixed(2)} ${a.y.toFixed(2)} A ${R} ${R} 0 ${e-s>180?1:0} 1 ${b.x.toFixed(2)} ${b.y.toFixed(2)}`;
+function describeArc(startDeg, endDeg) {
+  const s = polarToXY(startDeg, R), e = polarToXY(endDeg, R);
+  const sweep = endDeg - startDeg;
+  const large = sweep > 180 ? 1 : 0;
+  return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${R} ${R} 0 ${large} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
 }
 
-function buildGauge(){
-  const L=document.documentElement.classList.contains('light');
-  const fa=describeArc(ARC_START,ARC_END);
-  const tr=document.getElementById('arc-track');
-  tr.setAttribute('d',fa);tr.setAttribute('stroke',L?'#ddd':'#222');
-  const ne=document.getElementById('needle'),de=document.getElementById('needle-dot');
-  if(ne)ne.style.stroke=L?'#111':'#e8ff47';
-  if(de)de.setAttribute('fill',L?'#111':'#e8ff47');
-  const fill=document.getElementById('arc-fill');
-  fill.setAttribute('d',fa);
-  const al=Math.PI*R*ARC_SWEEP/180;
-  fill.style.strokeDasharray=al;fill.style.strokeDashoffset=al;fill._len=al;
-  const ticks=document.getElementById('ticks'),labels=document.getElementById('speed-labels');
-  ticks.innerHTML='';labels.innerHTML='';
-  const lv=gaugeLabels[unit],tv=new Set();
-  lv.forEach(v=>tv.add(v));
-  for(let i=0;i<lv.length-1;i++)tv.add((lv[i]+lv[i+1])/2);
-  tv.forEach(val=>{
-    const maj=lv.includes(val),deg=ARC_START+speedToFrac(val)*ARC_SWEEP;
-    const p1=polarToXY(deg,maj?R-14:R-6),p2=polarToXY(deg,R+5);
-    const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
-    ln.setAttribute('x1',p1.x);ln.setAttribute('y1',p1.y);
-    ln.setAttribute('x2',p2.x);ln.setAttribute('y2',p2.y);
-    ln.setAttribute('stroke',maj?(L?'#888':'#3a3a3a'):(L?'#bbb':'#252525'));
-    ln.setAttribute('stroke-width',maj?'1.5':'1');
-    ticks.appendChild(ln);
-  });
-  lv.forEach(val=>{
-    const deg=ARC_START+speedToFrac(val)*ARC_SWEEP,lp=polarToXY(deg,R-30);
-    const tx=document.createElementNS('http://www.w3.org/2000/svg','text');
-    tx.setAttribute('x',lp.x);tx.setAttribute('y',lp.y);
-    tx.setAttribute('dominant-baseline','middle');tx.setAttribute('data-val',val);
-    tx.setAttribute('fill',L?'#111':'#f0f0f0');tx.textContent=val;
-    labels.appendChild(tx);
-  });
-}
-
-function updateGauge(sv){
-  const frac=Math.min(1,speedToFrac(sv));
-  const fill=document.getElementById('arc-fill');
-  const len=fill._len||1;
-  fill.style.strokeDashoffset=len*(1-frac);
-  fill.style.opacity=sv>0?'1':'0';
-  const deg=ARC_START+frac*ARC_SWEEP;
-  const tip=polarToXY(deg,R-18),base=polarToXY(deg+180,12);
-  const ne=document.getElementById('needle');
-  ne.setAttribute('x1',base.x.toFixed(2));ne.setAttribute('y1',base.y.toFixed(2));
-  ne.setAttribute('x2',tip.x.toFixed(2));ne.setAttribute('y2',tip.y.toFixed(2));
-  const L=document.documentElement.classList.contains('light');
-  const fast=sv>breakpoint[unit],red=L?'#cc2222':'#ff4444',norm=L?'#111':'#e8ff47';
-  fill.style.stroke=fast?red:norm;ne.style.stroke=fast?red:norm;
-  const nd=document.getElementById('needle-dot');
-  if(nd)nd.setAttribute('fill',L?'#111':'#e8ff47');
-  const le=document.getElementById('speed-labels');
-  if(le)Array.from(le.children).forEach(el=>{
-    const lv=parseFloat(el.getAttribute('data-val'));
-    const t=Math.min(1,Math.max(0,(sv-lv+8)/12));
-    if(L){const v=Math.round(0xaa+(0x11-0xaa)*t);el.setAttribute('fill',`rgb(${v},${v},${v})`);}
-    else el.setAttribute('fill',`rgb(${Math.round(0xf0+(0xe8-0xf0)*t)},${Math.round(0xf0+(0xff-0xf0)*t)},${Math.round(0xf0+(0x47-0xf0)*t)})`);
-  });
-}
-
-// ═══════════════════════════════════════════════════════
-//  SMOOTH LOOP
-// ═══════════════════════════════════════════════════════
-let rafId=null,lastTick=0;
-const AR=0.10,AF=0.04;
-
-function startLoop(){
-  if(rafId)return;lastTick=performance.now();
-  function tick(now){
-    const dt=Math.min((now-lastTick)/(1000/60),4);lastTick=now;
-    const tgt=convert[unit](currentSpeedMS),diff=tgt-needleSpeed;
-    const f=1-Math.pow(1-(diff>0?AR:AF),dt);
-    needleSpeed=Math.abs(diff)<0.05?tgt:needleSpeed+diff*f;
-    displayedSpeed=Math.round(needleSpeed);
-    const nms=needleSpeed/convert[unit](1);
-    if(nms>maxSpeed){maxSpeed=nms;refreshStats();}
-    renderDisplay(needleSpeed,displayedSpeed);
-    document.getElementById('road-spd').textContent=displayedSpeed;
-    rafId=requestAnimationFrame(tick);
-  }
-  rafId=requestAnimationFrame(tick);
-}
-function stopLoop(){if(rafId){cancelAnimationFrame(rafId);rafId=null;}}
-
-function renderDisplay(nsv,dsv){
-  const el=document.getElementById('speed-display');
-  el.textContent=dsv;
-  const bp=breakpoint[unit];
-  el.classList.toggle('moving',dsv>0&&dsv<=bp);
-  el.classList.toggle('fast',dsv>bp);
-  updateGauge(nsv);
-}
-
-function refreshStats(){
-  document.getElementById('stat-max').textContent=toDisplay(maxSpeed);
-  const avg=speedSamples.length>0?speedSamples.reduce((a,b)=>a+b,0)/speedSamples.length:0;
-  document.getElementById('stat-avg').textContent=toDisplay(avg);
-  document.getElementById('stat-dist').textContent=totalDistKm.toFixed(2);
-}
-
-// ═══════════════════════════════════════════════════════
-//  CANVAS TILE MAP  —  zero dependencies
-// ═══════════════════════════════════════════════════════
-const MAP_ZOOM = 17;   // zoom level for road-level detail
-const TILE_SIZE = 256;
-
-// OSM tile coordinate math
-function latLonToTile(lat, lon, z) {
-  const n = Math.pow(2, z);
-  const x = Math.floor((lon + 180) / 360 * n);
-  const latR = lat * Math.PI / 180;
-  const y = Math.floor((1 - Math.log(Math.tan(latR) + 1 / Math.cos(latR)) / Math.PI) / 2 * n);
-  return { x, y };
-}
-
-// Pixel offset of lat/lon within a tile grid, in pixels
-function latLonToPixel(lat, lon, z) {
-  const n = Math.pow(2, z);
-  const px = (lon + 180) / 360 * n * TILE_SIZE;
-  const latR = lat * Math.PI / 180;
-  const py = (1 - Math.log(Math.tan(latR) + 1 / Math.cos(latR)) / Math.PI) / 2 * n * TILE_SIZE;
-  return { px, py };
-}
-
-const tileCache = {};   // url -> HTMLImageElement (loaded or loading)
-
-function getTile(x, y, z) {
-  const subs = ['a','b','c'];
-  const s = subs[(x + y) % 3];
-  const url = `https://${s}.tile.openstreetmap.org/${z}/${x}/${y}.png`;
-  if (tileCache[url]) return tileCache[url];
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => { img._loaded = true; drawRoadMap(); };
-  img.src = url;
-  tileCache[url] = img;
-  return img;
-}
-
-// Keep cache bounded
-function pruneTileCache() {
-  const keys = Object.keys(tileCache);
-  if (keys.length > 120) {
-    keys.slice(0, 40).forEach(k => delete tileCache[k]);
-  }
-}
-
-let roadCanvas, roadCtx;
-let roadRafId = null;
-
-function initRoadCanvas() {
-  roadCanvas = document.getElementById('road-canvas');
-  roadCtx = roadCanvas.getContext('2d');
-  resizeCanvas();
-  window.addEventListener('resize', () => { resizeCanvas(); drawRoadMap(); });
-}
-
-function resizeCanvas() {
-  if (!roadCanvas) return;
-  const el = document.getElementById('screen-road');
-  roadCanvas.width  = el.offsetWidth  || window.innerWidth;
-  roadCanvas.height = el.offsetHeight || (window.innerHeight - 44);
-}
-
-function drawRoadMap() {
-  if (!roadCtx || !roadCanvas) return;
-  if (currentLat === null) return;
-
-  const W = roadCanvas.width, H = roadCanvas.height;
+// ── Build Gauge ───────────────────────────────────────────────
+function buildGauge() {
+  const fullArc = describeArc(ARC_START, ARC_END);
   const isLight = document.documentElement.classList.contains('light');
-  const heading = currentHeading || 0;
+  const trackEl = document.getElementById('arc-track');
+  trackEl.setAttribute('d', fullArc);
+  trackEl.setAttribute('stroke', isLight ? '#ddd' : '#222');
+  const needleEl = document.getElementById('needle');
+  const dotEl = document.getElementById('needle-dot');
+  if (needleEl) needleEl.style.stroke = isLight ? '#111111' : '#e8ff47';
+  if (dotEl) dotEl.setAttribute('fill', isLight ? '#111111' : '#e8ff47');
 
-  roadCtx.save();
+  const fill = document.getElementById('arc-fill');
+  fill.setAttribute('d', fullArc);
+  const arcLen = Math.PI * R * ARC_SWEEP / 180;
+  fill.style.strokeDasharray = arcLen;
+  fill.style.strokeDashoffset = arcLen;
+  fill._len = arcLen;
 
-  // 1. Fill background (matches theme)
-  roadCtx.fillStyle = isLight ? '#e8e8e8' : '#111';
-  roadCtx.fillRect(0, 0, W, H);
+  const ticks = document.getElementById('ticks');
+  const labels = document.getElementById('speed-labels');
+  ticks.innerHTML = ''; labels.innerHTML = '';
 
-  // 2. Translate to center, rotate map so heading faces up
-  roadCtx.translate(W / 2, H / 2);
-  roadCtx.rotate(-heading * Math.PI / 180);
-
-  // 3. Figure out which tiles to draw
-  const { px: cpx, py: cpy } = latLonToPixel(currentLat, currentLon, MAP_ZOOM);
-
-  // How many tiles needed to cover screen diagonal (plus buffer)
-  const tilesNeeded = Math.ceil(Math.sqrt(W * W + H * H) / TILE_SIZE) + 2;
-
-  const centerTile = latLonToTile(currentLat, currentLon, MAP_ZOOM);
-
-  for (let dx = -tilesNeeded; dx <= tilesNeeded; dx++) {
-    for (let dy = -tilesNeeded; dy <= tilesNeeded; dy++) {
-      const tx = centerTile.x + dx;
-      const ty = centerTile.y + dy;
-      if (tx < 0 || ty < 0) continue;
-      const tileMaxXY = Math.pow(2, MAP_ZOOM) - 1;
-      if (tx > tileMaxXY || ty > tileMaxXY) continue;
-
-      const img = getTile(tx, ty, MAP_ZOOM);
-
-      // Pixel position of this tile's top-left corner relative to our position
-      const tilePx = tx * TILE_SIZE - cpx;
-      const tilePy = ty * TILE_SIZE - cpy;
-
-      if (img._loaded) {
-        // Apply dark/light filter via canvas globalCompositeOperation trick
-        roadCtx.save();
-        roadCtx.drawImage(img, tilePx, tilePy, TILE_SIZE, TILE_SIZE);
-
-        if (!isLight) {
-          // Dark theme: invert + darken overlay
-          roadCtx.globalCompositeOperation = 'difference';
-          roadCtx.fillStyle = '#ffffff';
-          roadCtx.fillRect(tilePx, tilePy, TILE_SIZE, TILE_SIZE);
-          roadCtx.globalCompositeOperation = 'multiply';
-          roadCtx.fillStyle = 'rgba(30,30,30,0.55)';
-          roadCtx.fillRect(tilePx, tilePy, TILE_SIZE, TILE_SIZE);
-        } else {
-          // Light theme: slight desaturate
-          roadCtx.globalCompositeOperation = 'saturation';
-          roadCtx.fillStyle = 'rgba(128,128,128,0.3)';
-          roadCtx.fillRect(tilePx, tilePy, TILE_SIZE, TILE_SIZE);
-        }
-        roadCtx.restore();
-      } else {
-        // Placeholder while loading
-        roadCtx.fillStyle = isLight ? '#ddd' : '#1a1a1a';
-        roadCtx.fillRect(tilePx, tilePy, TILE_SIZE, TILE_SIZE);
-      }
-    }
+  const labelVals = gaugeLabels[unit];
+  const tickVals = new Set();
+  labelVals.forEach(v => tickVals.add(v));
+  for (let i = 0; i < labelVals.length - 1; i++) {
+    const mid = (labelVals[i] + labelVals[i+1]) / 2;
+    tickVals.add(mid);
   }
 
-  roadCtx.restore();
+  tickVals.forEach(val => {
+    const isMajor = labelVals.includes(val);
+    const frac = speedToFrac(val);
+    const deg = ARC_START + frac * ARC_SWEEP;
+    const innerR = isMajor ? R - 14 : R - 6;
+    const outerR = R + 5;
+    const p1 = polarToXY(deg, innerR), p2 = polarToXY(deg, outerR);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+    line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+    const lIsLight = document.documentElement.classList.contains('light');
+    line.setAttribute('stroke', isMajor ? (lIsLight ? '#888' : '#3a3a3a') : (lIsLight ? '#bbb' : '#252525'));
+    line.setAttribute('stroke-width', isMajor ? '1.5' : '1');
+    ticks.appendChild(line);
+  });
 
-  // 4. Draw navigation arrow at center (always upright — heading is handled by map rotation)
-  drawNavArrow(W / 2, H / 2, isLight);
-
-  pruneTileCache();
-}
-
-function drawNavArrow(cx, cy, isLight) {
-  const ctx = roadCtx;
-  const color = isLight ? '#111111' : '#e8ff47';
-  const glowColor = isLight ? 'rgba(0,0,0,0.3)' : 'rgba(232,255,71,0.6)';
-
-  const w = 18, h = 28; // arrow half-width, length
-
-  ctx.save();
-  ctx.translate(cx, cy);
-
-  // Glow
-  ctx.shadowColor = glowColor;
-  ctx.shadowBlur = 12;
-
-  // Arrow shape: pointed up (north), map rotates behind it
-  ctx.beginPath();
-  ctx.moveTo(0, -h);         // tip
-  ctx.lineTo(w, h * 0.5);    // bottom-right
-  ctx.lineTo(0, h * 0.25);   // inner notch
-  ctx.lineTo(-w, h * 0.5);   // bottom-left
-  ctx.closePath();
-  ctx.fillStyle = color;
-  ctx.fill();
-
-  // Accuracy circle (faint)
-  ctx.shadowBlur = 0;
-  ctx.beginPath();
-  ctx.arc(0, 0, 6, 0, Math.PI * 2);
-  ctx.fillStyle = isLight ? 'rgba(0,0,0,0.15)' : 'rgba(232,255,71,0.2)';
-  ctx.fill();
-
-  ctx.restore();
-}
-
-// Schedule a redraw on next frame
-function scheduleMapDraw() {
-  if (roadRafId) return;
-  roadRafId = requestAnimationFrame(() => {
-    roadRafId = null;
-    drawRoadMap();
+  labelVals.forEach(val => {
+    const frac = speedToFrac(val);
+    const deg = ARC_START + frac * ARC_SWEEP;
+    const lp = polarToXY(deg, R - 30);
+    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.setAttribute('x', lp.x); text.setAttribute('y', lp.y);
+    text.setAttribute('dominant-baseline','middle');
+    text.setAttribute('data-val', val);
+    text.setAttribute('fill', document.documentElement.classList.contains('light') ? '#111' : '#f0f0f0');
+    text.textContent = val;
+    labels.appendChild(text);
   });
 }
 
-// ═══════════════════════════════════════════════════════
-//  GPS
-// ═══════════════════════════════════════════════════════
-function headingToCardinal(h){
-  return['N','NE','E','SE','S','SW','W','NW'][Math.round(h/45)%8];
+function updateGauge(speedVal) {
+  const frac = Math.min(1, speedToFrac(speedVal));
+  const fill = document.getElementById('arc-fill');
+  const len = fill._len || 1;
+  fill.style.strokeDashoffset = len * (1 - frac);
+  fill.style.opacity = speedVal > 0 ? '1' : '0';
+
+  const deg = ARC_START + frac * ARC_SWEEP;
+  const tip = polarToXY(deg, R - 18);
+  const base = polarToXY(deg + 180, 12);
+  const needle = document.getElementById('needle');
+  needle.setAttribute('x1', base.x.toFixed(2)); needle.setAttribute('y1', base.y.toFixed(2));
+  needle.setAttribute('x2', tip.x.toFixed(2));  needle.setAttribute('y2', tip.y.toFixed(2));
+
+  const bp = breakpoint[unit];
+  const isLight = document.documentElement.classList.contains('light');
+  if (speedVal > bp) {
+    const red = isLight ? '#cc2222' : '#ff4444';
+    fill.style.stroke = red;
+    needle.style.stroke = red;
+  } else {
+    fill.style.stroke = isLight ? '#111111' : '#e8ff47';
+    needle.style.stroke = isLight ? '#111111' : '#e8ff47';
+  }
+  const ndot = document.getElementById('needle-dot');
+  if (ndot) ndot.setAttribute('fill', isLight ? '#111111' : '#e8ff47');
+
+  const labelsEl = document.getElementById('speed-labels');
+  if (labelsEl) {
+    const lblLight = document.documentElement.classList.contains('light');
+    Array.from(labelsEl.children).forEach(el => {
+      const labelVal = parseFloat(el.getAttribute('data-val'));
+      const t = Math.min(1, Math.max(0, (speedVal - labelVal + 8) / 12));
+      if (lblLight) {
+        const v = Math.round(0xaa + (0x11 - 0xaa) * t);
+        el.setAttribute('fill', `rgb(${v},${v},${v})`);
+      } else {
+        const r = Math.round(0xf0 + (0xe8 - 0xf0) * t);
+        const g = Math.round(0xf0 + (0xff - 0xf0) * t);
+        const b = Math.round(0xf0 + (0x47 - 0xf0) * t);
+        el.setAttribute('fill', `rgb(${r},${g},${b})`);
+      }
+    });
+  }
 }
 
+// ── Smooth Animation Loop ─────────────────────────────────────
+let smoothRafId = null;
+let lastTickTime = 0;
+
+const ALPHA_RISE = 0.10;
+const ALPHA_FALL = 0.04;
+
+function startSmoothLoop() {
+  if (smoothRafId) return;
+  lastTickTime = performance.now();
+  function tick(now) {
+    const dt = Math.min((now - lastTickTime) / (1000 / 60), 4);
+    lastTickTime = now;
+    const target = convert[unit](currentSpeedMS);
+    const diff = target - needleSpeed;
+    const alpha = diff > 0 ? ALPHA_RISE : ALPHA_FALL;
+    const factor = 1 - Math.pow(1 - alpha, dt);
+    if (Math.abs(diff) < 0.05) {
+      needleSpeed = target;
+    } else {
+      needleSpeed += diff * factor;
+    }
+    displayedSpeed = Math.round(needleSpeed);
+    renderDisplay(needleSpeed, displayedSpeed);
+    smoothRafId = requestAnimationFrame(tick);
+  }
+  smoothRafId = requestAnimationFrame(tick);
+}
+
+function stopSmoothLoop() {
+  if (smoothRafId) { cancelAnimationFrame(smoothRafId); smoothRafId = null; }
+}
+
+function renderDisplay(needleSpeedVal, displaySpeedVal) {
+  const el = document.getElementById('speed-display');
+  el.textContent = displaySpeedVal;
+  const bp = breakpoint[unit];
+  el.classList.toggle('moving', displaySpeedVal > 0 && displaySpeedVal <= bp);
+  el.classList.toggle('fast', displaySpeedVal > bp);
+  updateGauge(needleSpeedVal);
+}
+
+// ── Stats refresh ─────────────────────────────────────────────
+function refreshStats() {
+  document.getElementById('stat-max').textContent = toDisplay(maxSpeed);
+  const avgMs = speedSamples.length > 0
+    ? speedSamples.reduce((a, b) => a + b, 0) / speedSamples.length : 0;
+  document.getElementById('stat-avg').textContent = toDisplay(avgMs);
+  // KEY FIX: write totalDistKm here
+  document.getElementById('stat-dist').textContent = totalDistKm.toFixed(2);
+}
+
+// ── Direction helper ──────────────────────────────────────────
+function headingToCardinal(h) {
+  const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+  return dirs[Math.round(h / 45) % 8];
+}
+
+// ── GPS position handler ──────────────────────────────────────
+// THIS IS THE CORE FIX: haversine() is now called each GPS fix
 function onPosition(pos) {
   const lat = pos.coords.latitude;
   const lon = pos.coords.longitude;
   const spd = pos.coords.speed;
   const speedMs = (spd != null && spd >= 0) ? spd : 0;
   const acc = pos.coords.accuracy;
-  const hdg = pos.coords.heading;
 
   currentSpeedMS = speedMs;
-  currentLat = lat;
-  currentLon = lon;
-  if (hdg != null && !isNaN(hdg) && speedMs > 0.5) currentHeading = hdg;
 
-  // Distance
+  // Track max from real GPS speed only (not animated needle)
+  if (speedMs > maxSpeed) { maxSpeed = speedMs; }
+
+  // Accumulate distance between consecutive fixes
   if (lastLat !== null && lastLon !== null) {
-    const seg = haversine(lastLat, lastLon, lat, lon);
-    if (seg < 0.5) totalDistKm += seg;
+    const segKm = haversine(lastLat, lastLon, lat, lon);
+    if (segKm < 0.5) { // ignore GPS teleport jumps
+      totalDistKm += segKm;
+    }
   }
-  lastLat = lat; lastLon = lon;
+  lastLat = lat;
+  lastLon = lon;
 
-  // Avg
+  // Speed samples for rolling average (moving only)
   if (speedMs > 0.5) {
     speedSamples.push(speedMs);
     if (speedSamples.length > 300) speedSamples.shift();
@@ -615,136 +502,149 @@ function onPosition(pos) {
 
   // Altitude
   const alt = pos.coords.altitude;
-  document.getElementById('stat-alt').textContent = alt != null ? Math.round(alt) : '—';
+  document.getElementById('stat-alt').textContent =
+    alt != null ? Math.round(alt) : '—';
 
-  // Direction
+  // Heading / direction
+  const heading = pos.coords.heading;
   const dirEl = document.getElementById('direction-text');
-  dirEl.textContent = (hdg != null && !isNaN(hdg) && speedMs > 0.5) ? headingToCardinal(hdg) : '—';
+  if (heading != null && !isNaN(heading) && speedMs > 0.5) {
+    dirEl.textContent = headingToCardinal(heading);
+  } else {
+    dirEl.textContent = '—';
+  }
 
-  // Signal
-  updateSignal(acc);
+  // Signal quality bar
+  const fillEl = document.getElementById('signal-fill');
+  const valEl  = document.getElementById('signal-val');
+  const dotEl  = document.getElementById('sat-dot');
+  const lblEl  = document.getElementById('sat-label');
+  if (acc != null) {
+    const pct = Math.max(0, Math.min(100, Math.round((1 - (acc - 5) / 95) * 100)));
+    fillEl.style.width = pct + '%';
+    valEl.textContent = `±${Math.round(acc)}M`;
+    dotEl.classList.add('locked');
+    lblEl.textContent = pct > 70 ? 'LOCKED' : pct > 30 ? 'WEAK' : 'POOR';
+  }
 
-  // Road acc badge
-  document.getElementById('road-acc').textContent = acc != null ? `±${Math.round(acc)}M` : 'NO LOCK';
-
-  // Show road map
-  document.getElementById('road-empty').classList.add('hidden');
-
-  // Redraw map
-  scheduleMapDraw();
-
-  refreshStats();
+  refreshStats(); // updates DIST, MAX, AVG every fix
 }
 
-function updateSignal(acc) {
-  const fe=document.getElementById('signal-fill'),ve=document.getElementById('signal-val');
-  const de=document.getElementById('sat-dot'),le=document.getElementById('sat-label');
-  if(acc==null){fe.style.width='0%';ve.textContent='NO LOCK';de.classList.remove('locked');le.textContent='NO SAT';return;}
-  const pct=Math.max(0,Math.min(100,Math.round((1-(acc-5)/95)*100)));
-  fe.style.width=pct+'%';ve.textContent=`±${Math.round(acc)}M`;
-  de.classList.add('locked');le.textContent=pct>70?'LOCKED':pct>30?'WEAK':'POOR';
-}
-
+// ── GPS error handler ─────────────────────────────────────────
 function onError(err) {
-  const msgs={1:'LOCATION DENIED — ENABLE IN BROWSER',2:'POSITION UNAVAILABLE',3:'GPS TIMEOUT'};
-  document.getElementById('error-msg').textContent=msgs[err.code]||'GPS ERROR';
+  const msgs = { 1:'LOCATION DENIED — ENABLE IN BROWSER', 2:'POSITION UNAVAILABLE', 3:'GPS TIMEOUT' };
+  document.getElementById('error-msg').textContent = msgs[err.code] || 'GPS ERROR';
   stopTracking();
 }
 
-// ═══════════════════════════════════════════════════════
-//  TRACKING CONTROL
-// ═══════════════════════════════════════════════════════
+// ── Tracking control ──────────────────────────────────────────
 function startTracking() {
-  if (!navigator.geolocation) {document.getElementById('error-msg').textContent='GPS NOT SUPPORTED';return;}
-  lastLat=null;lastLon=null;totalDistKm=0;maxSpeed=0;currentSpeedMS=0;
-  speedSamples=[];needleSpeed=0;displayedSpeed=0;
-  currentLat=null;currentLon=null;currentHeading=0;
+  if (!navigator.geolocation) {
+    document.getElementById('error-msg').textContent = 'GPS NOT SUPPORTED';
+    return;
+  }
+  // Reset all session state
+  lastLat = null; lastLon = null;
+  totalDistKm = 0;
+  maxSpeed = 0;
+  currentSpeedMS = 0;
+  speedSamples = [];
+  needleSpeed = 0;
+  displayedSpeed = 0;
   refreshStats();
-  ['stat-alt'].forEach(id=>document.getElementById(id).textContent='—');
-  document.getElementById('direction-text').textContent='—';
-  document.getElementById('signal-fill').style.width='0%';
-  document.getElementById('signal-val').textContent='NO LOCK';
+  document.getElementById('stat-alt').textContent = '—';
+  document.getElementById('direction-text').textContent = '—';
+  document.getElementById('signal-fill').style.width = '0%';
+  document.getElementById('signal-val').textContent = 'NO LOCK';
   document.getElementById('sat-dot').classList.remove('locked');
-  document.getElementById('sat-label').textContent='NO SAT';
-  tracking=true;
+  document.getElementById('sat-label').textContent = 'NO SAT';
+
+  tracking = true;
   document.getElementById('start-btn').classList.add('tracking');
-  document.getElementById('start-btn').innerHTML='<span class="sdot on" id="sdot"></span>STOP TRACKING';
-  document.getElementById('error-msg').textContent='';
-  watchId=navigator.geolocation.watchPosition(onPosition,onError,{enableHighAccuracy:true,timeout:10000,maximumAge:0});
-  startLoop();
+  document.getElementById('start-btn').innerHTML =
+    '<span class="sdot on" id="sdot"></span>STOP TRACKING';
+  document.getElementById('error-msg').textContent = '';
+
+  watchId = navigator.geolocation.watchPosition(onPosition, onError, {
+    enableHighAccuracy: true,
+    timeout: 10000,
+    maximumAge: 0
+  });
+  startSmoothLoop();
 }
 
 function stopTracking() {
-  tracking=false;
-  if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;}
-  currentSpeedMS=0;
+  tracking = false;
+  if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+  currentSpeedMS = 0;
   document.getElementById('start-btn').classList.remove('tracking');
-  document.getElementById('start-btn').innerHTML='<span class="sdot" id="sdot"></span>START TRACKING';
-  setTimeout(()=>{stopLoop();needleSpeed=0;renderDisplay(0,0);document.getElementById('road-spd').textContent='0';},2500);
+  document.getElementById('start-btn').innerHTML =
+    '<span class="sdot" id="sdot"></span>START TRACKING';
+  setTimeout(() => { stopSmoothLoop(); needleSpeed = 0; renderDisplay(0, 0); }, 2500);
 }
 
-function toggleTracking(){if(tracking)stopTracking();else startTracking();}
+function toggleTracking() {
+  if (tracking) stopTracking(); else startTracking();
+}
 
-// ═══════════════════════════════════════════════════════
-//  TAB SWITCHING
-// ═══════════════════════════════════════════════════════
-function switchTab(tab) {
-  document.getElementById('tab-speed').classList.toggle('active',tab==='speed');
-  document.getElementById('tab-road').classList.toggle('active',tab==='road');
-  document.getElementById('screen-speed').classList.toggle('active',tab==='speed');
-  document.getElementById('screen-road').classList.toggle('active',tab==='road');
-  if (tab==='road') {
-    resizeCanvas();
-    if (currentLat !== null) {
-      document.getElementById('road-empty').classList.add('hidden');
-      scheduleMapDraw();
-    }
+// ── Unit switching ─────────────────────────────────────────────
+function setUnit(u) {
+  unit = u;
+  try { localStorage.setItem('velox-unit', u); } catch(e) {}
+  ['kmh','mph','ms'].forEach(id => {
+    document.getElementById('btn-'+id).classList.toggle('active', id === u);
+  });
+  // Resync animated state to new unit so needle doesn't glitch
+  needleSpeed = convert[unit](currentSpeedMS);
+  displayedSpeed = Math.round(needleSpeed);
+  buildGauge();
+  refreshStats();
+  renderDisplay(needleSpeed, displayedSpeed);
+}
+
+// ── Theme ──────────────────────────────────────────────────────
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  try { localStorage.setItem('velox-theme', isLight ? 'light' : 'dark'); } catch(e) {}
+  buildGauge();
+}
+
+// ── PWA Install ────────────────────────────────────────────────
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => { deferredPrompt = null; dismissInstall(); });
   }
 }
-
-// ═══════════════════════════════════════════════════════
-//  UNIT / THEME / PWA
-// ═══════════════════════════════════════════════════════
-function setUnit(u) {
-  unit=u;try{localStorage.setItem('velox-unit',u);}catch(e){}
-  ['kmh','mph','ms'].forEach(id=>document.getElementById('btn-'+id).classList.toggle('active',id===u));
-  document.getElementById('road-unit').textContent=unitLabel[u];
-  buildGauge();refreshStats();
-}
-
-function toggleTheme() {
-  const L=document.documentElement.classList.toggle('light');
-  try{localStorage.setItem('velox-theme',L?'light':'dark');}catch(e){}
-  buildGauge();
-  scheduleMapDraw();
-}
-
-function installApp(){
-  if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;dismissInstall();});}
-}
-function dismissInstall(){
+function dismissInstall() {
   document.getElementById('install-banner').classList.remove('visible');
-  try{localStorage.setItem('velox-install-dismissed','1');}catch(e){}
+  try { localStorage.setItem('velox-install-dismissed', '1'); } catch(e) {}
 }
-window.addEventListener('beforeinstallprompt',e=>{
-  e.preventDefault();deferredPrompt=e;
-  try{if(!localStorage.getItem('velox-install-dismissed'))document.getElementById('install-banner').classList.add('visible');}
-  catch(e){document.getElementById('install-banner').classList.add('visible');}
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  try {
+    if (!localStorage.getItem('velox-install-dismissed'))
+      document.getElementById('install-banner').classList.add('visible');
+  } catch(e) {
+    document.getElementById('install-banner').classList.add('visible');
+  }
 });
 
-// ═══════════════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════════════
-(function init(){
-  try{
-    if(localStorage.getItem('velox-theme')==='light')document.documentElement.classList.add('light');
-    const su=localStorage.getItem('velox-unit');
-    if(su){unit=su;['kmh','mph','ms'].forEach(id=>document.getElementById('btn-'+id).classList.toggle('active',id===unit));}
-  }catch(e){}
+// ── Init ───────────────────────────────────────────────────────
+(function init() {
+  try {
+    if (localStorage.getItem('velox-theme') === 'light')
+      document.documentElement.classList.add('light');
+    const savedUnit = localStorage.getItem('velox-unit');
+    if (savedUnit) {
+      unit = savedUnit;
+      ['kmh','mph','ms'].forEach(id => {
+        document.getElementById('btn-'+id).classList.toggle('active', id === unit);
+      });
+    }
+  } catch(e) {}
   buildGauge();
-  renderDisplay(0,0);
-  document.getElementById('road-unit').textContent=unitLabel[unit];
-  initRoadCanvas();
+  renderDisplay(0, 0);
 })();
 </script>
 </body>
