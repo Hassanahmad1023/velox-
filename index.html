@@ -11,7 +11,7 @@
 <meta name="apple-touch-fullscreen" content="yes"/>
 <style>* { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }</style>
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAFEUlEQVR4nO3cXVJbOxCFUXMrT84sMg9GzzwyizznPlBUEcpgc36kbu21BpDYUn/SMVB+ul6vfy8Q6r/ZLwBmEgDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRAtB+zX8Dqfv953v1v/Pr5csAr4ZYnX4x1jCMG/buEsZ8ANpox8PcI4vsE8KCKA3+PIO4TwBc6Dv1nxHCbAG5YafA/EsK/BPDOyoP/kRBeCeCSNfgfpYcQHUDy4H+UGkJkAAb/c2khRAVg8B+XEkJEAAb/e+lhRAVg8B+XEkJUAAb/e2lhRAVg8B+XEkJkAAb/e2lhRAVg8n8iFcJfGY7MZAAAAASUVORK5CYII="/>
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAFEUlEQVR4nO3cXVJbOxCFUXMrT84sMg9GzzwyizznPlBUEcpgc36kbu21BpDYUn/SMVB+ul6vfy8Q6r/ZLwBmEgDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRAtB+zX8Dqfv953v1v/Pr5csAr4ZYnX4x1jCMG/buEsZ8ANpox8PcI4vsE8KCKA3+PIO4TwBc6Dv1nxHCbAG5YafA/EsK/BPDOyoP/kRBeCeCSNfgfpYcQHUDy4H+UGkJkAAb/c2khRAVg8B+XEkJEAAb/e+lhRAVg8n8iFcJfGY7MZAAAAASUVORK5CYII="/>
 <title>VELOX — GPS Speed</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap');
@@ -63,6 +63,10 @@ transition:background 0.3s,border-color 0.3s,color 0.3s;
 :root.light .sat-badge{background:#111;border-color:#111;color:#fff;}
 :root.light .sat-dot{background:#fff;}
 :root.light .sat-dot.locked{background:#e8ff47;}
+/* IP lock badge style */
+.sat-badge.ip-lock{background:#ff9500;border-color:#ff9500;}
+:root.light .sat-badge.ip-lock{background:#cc6600;border-color:#cc6600;color:#fff;}
+
 .gauge-wrap{
 position:relative;
 width:min(320px, 90vw);
@@ -75,7 +79,7 @@ margin-bottom:-10px;
 .speed-num{
 font-family:'Bebas Neue',sans-serif;
 font-size:clamp(80px,22vw,116px);
-  font-style:italic;
+font-style:italic;
 color:var(--text);letter-spacing:-3px;
 transition:color 0.4s ease;display:block;
 }
@@ -96,25 +100,22 @@ transition:all 0.2s;user-select:none;
 :root.light .unit-label.active{background:#111;border-color:#111;color:#fff;}
 :root.light .unit-label:hover:not(.active){color:#111;border-color:#999;}
 .unit-label:hover:not(.active){color:#888;border-color:var(--border);}
-
-/* ── Minimal mode ─────────────────────────────────────────── */
 .speed-num{cursor:pointer;}
 body.minimal .gauge-wrap{display:none;}
 body.minimal .speed-block{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  flex:1;margin-bottom:0;
+display:flex;flex-direction:column;align-items:center;justify-content:center;
+flex:1;margin-bottom:0;
 }
 body.minimal .speed-num{
-  font-style:italic;
-  font-size:clamp(120px,38vw,200px);
-  letter-spacing:-8px;
+font-style:italic;
+font-size:clamp(120px,38vw,200px);
+letter-spacing:-8px;
 }
 body.minimal .unit-row{margin-bottom:22px;}
-/* small tap-hint dot below the number */
 .view-hint{
-  display:block;width:4px;height:4px;border-radius:50%;
-  background:var(--dim);margin:4px auto 0;opacity:0.35;
-  transition:opacity 0.3s;pointer-events:none;
+display:block;width:4px;height:4px;border-radius:50%;
+background:var(--dim);margin:4px auto 0;opacity:0.35;
+transition:opacity 0.3s;pointer-events:none;
 }
 .speed-block:hover .view-hint,.speed-block:active .view-hint{opacity:0.7;}
 body.minimal .view-hint{background:var(--accent);opacity:0.5;}
@@ -193,10 +194,9 @@ z-index:50;line-height:1;
 </style>
 </head>
 <body>
-
 <div class="header">
 <div class="wordmark">VELOX</div>
-<div class="sat-badge">
+<div class="sat-badge" id="sat-badge">
 <div class="sat-dot" id="sat-dot"></div>
 <span id="sat-label">NO SAT</span>
 </div>
@@ -219,15 +219,13 @@ font-family="'Space Mono',monospace" font-size="10" font-weight="700" fill="#888
 <div class="speed-block">
 <div class="speed-block" onclick="toggleView()" title="Tap to switch view">
 <span class="speed-num" id="speed-display">0</span>
-  <span class="view-hint"></span>
+<span class="view-hint"></span>
 </div>
-
 <div class="unit-row">
 <span class="unit-label active" id="btn-kmh" onclick="setUnit('kmh')">KM/H</span>
-<span class="unit-label"        id="btn-mph" onclick="setUnit('mph')">MPH</span>
-<span class="unit-label"        id="btn-ms"  onclick="setUnit('ms')">M/S</span>
+<span class="unit-label" id="btn-mph" onclick="setUnit('mph')">MPH</span>
+<span class="unit-label" id="btn-ms" onclick="setUnit('ms')">M/S</span>
 </div>
-
 <div class="stats">
 <div class="stat"><span class="stat-val" id="stat-max">0</span><span class="stat-label">MAX</span></div>
 <div class="stat-divider"></div>
@@ -237,18 +235,15 @@ font-family="'Space Mono',monospace" font-size="10" font-weight="700" fill="#888
 <div class="stat-divider"></div>
 <div class="stat"><span class="stat-val" id="stat-alt">—</span><span class="stat-label">ALT M</span></div>
 </div>
-
 <div class="signal-row">
 <span class="signal-label">GNSS</span>
 <div class="signal-track"><div class="signal-fill" id="signal-fill"></div></div>
 <span class="signal-val" id="signal-val">NO LOCK</span>
 </div>
-
 <button class="start-btn" id="start-btn" onclick="toggleTracking()">
 <span class="sdot" id="sdot"></span>START TRACKING
 </button>
 <div class="error-msg" id="error-msg"></div>
-
 <div id="install-banner">
 <span>ADD VELOX TO HOME SCREEN</span>
 <div style="display:flex;gap:8px">
@@ -256,7 +251,6 @@ font-family="'Space Mono',monospace" font-size="10" font-weight="700" fill="#888
 <button id="install-btn" onclick="installApp()">INSTALL</button>
 </div>
 </div>
-
 <button id="theme-btn" onclick="toggleTheme()" title="Toggle theme">☀</button>
 
 <script>
@@ -269,6 +263,7 @@ let unit = (() => { try { return localStorage.getItem('velox-unit') || 'kmh'; } 
 let tracking = false, watchId = null;
 let maxSpeed = 0, currentSpeedMS = 0;
 let deferredPrompt = null;
+let sourceMode = 'none'; // 'none' | 'ip' | 'gps'
 
 // ── Distance & avg state ─────────────────────────────────────
 let lastLat = null, lastLon = null;
@@ -279,337 +274,410 @@ let speedSamples = [];
 let displayedSpeed = 0;
 let needleSpeed = 0;
 
+// ── Speed interpolation between GPS fixes ────────────────────
+// We track the last two GPS speed readings + timestamps to interpolate
+let prevSpeedMS = 0;
+let currSpeedMS = 0;
+let lastGpsTime = 0;           // ms timestamp of last GPS fix
+let gpsInterval = 1000;        // estimated interval between GPS fixes (ms)
+let speedVelocity = 0;         // rate of speed change m/s per second (for prediction)
+
 const convert = { kmh: v => v*3.6, mph: v => v*2.23694, ms: v => v };
 const maxForUnit = { kmh: 220, mph: 140, ms: 60 };
 const logicalMax = { kmh: 280, mph: 180, ms: 60 };
 const breakpoint = { kmh: 160, mph: 100, ms: 60 };
 
 function speedToFrac(val) {
-const bp = breakpoint[unit];
-const lmax = logicalMax[unit];
-const pmax = maxForUnit[unit];
-const bpFrac = bp / pmax;
-if (val <= bp) {
-return (val / bp) * bpFrac;
-} else {
-const remainArc = 1 - bpFrac;
-const remainVal = lmax - bp;
-return bpFrac + ((val - bp) / remainVal) * remainArc;
-}
+  const bp = breakpoint[unit];
+  const lmax = logicalMax[unit];
+  const pmax = maxForUnit[unit];
+  const bpFrac = bp / pmax;
+  if (val <= bp) {
+    return (val / bp) * bpFrac;
+  } else {
+    const remainArc = 1 - bpFrac;
+    const remainVal = lmax - bp;
+    return bpFrac + ((val - bp) / remainVal) * remainArc;
+  }
 }
 
 const gaugeLabels = {
-kmh: [0,20,40,60,80,100,120,140,160,200,240,280],
-mph: [0,20,40,60,80,100,140,180],
-ms:  [0,10,20,30,40,50,60]
+  kmh: [0,20,40,60,80,100,120,140,160,200,240,280],
+  mph: [0,20,40,60,80,100,140,180],
+  ms: [0,10,20,30,40,50,60]
 };
 
 function toDisplay(ms) { return Math.round(convert[unit](ms)); }
 
 // ── Haversine distance (km) ──────────────────────────────────
 function haversine(lat1, lon1, lat2, lon2) {
-const EARTH_R = 6371;
-const dLat = (lat2 - lat1) * Math.PI / 180;
-const dLon = (lon2 - lon1) * Math.PI / 180;
-const a = Math.sin(dLat/2)**2 +
-Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-Math.sin(dLon/2)**2;
-return EARTH_R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const EARTH_R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 +
+    Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+    Math.sin(dLon/2)**2;
+  return EARTH_R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
 // ── Geometry ─────────────────────────────────────────────────
 function polarToXY(deg, r) {
-const rad = (deg - 90) * Math.PI / 180;
-return { x: CX + r*Math.cos(rad), y: CY + r*Math.sin(rad) };
+  const rad = (deg - 90) * Math.PI / 180;
+  return { x: CX + r*Math.cos(rad), y: CY + r*Math.sin(rad) };
 }
 
 function describeArc(startDeg, endDeg) {
-const s = polarToXY(startDeg, R), e = polarToXY(endDeg, R);
-const sweep = endDeg - startDeg;
-const large = sweep > 180 ? 1 : 0;
-return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${R} ${R} 0 ${large} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
+  const s = polarToXY(startDeg, R), e = polarToXY(endDeg, R);
+  const sweep = endDeg - startDeg;
+  const large = sweep > 180 ? 1 : 0;
+  return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${R} ${R} 0 ${large} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
 }
 
 // ── Build Gauge ───────────────────────────────────────────────
 function buildGauge() {
-const fullArc = describeArc(ARC_START, ARC_END);
-const isLight = document.documentElement.classList.contains('light');
-const trackEl = document.getElementById('arc-track');
-trackEl.setAttribute('d', fullArc);
-trackEl.setAttribute('stroke', isLight ? '#ddd' : '#222');
-const needleEl = document.getElementById('needle');
-const dotEl = document.getElementById('needle-dot');
-if (needleEl) needleEl.style.stroke = isLight ? '#111111' : '#e8ff47';
-if (dotEl) dotEl.setAttribute('fill', isLight ? '#111111' : '#e8ff47');
-
-const fill = document.getElementById('arc-fill');
-fill.setAttribute('d', fullArc);
-const arcLen = Math.PI * R * ARC_SWEEP / 180;
-fill.style.strokeDasharray = arcLen;
-fill.style.strokeDashoffset = arcLen;
-fill._len = arcLen;
-
-const ticks = document.getElementById('ticks');
-const labels = document.getElementById('speed-labels');
-ticks.innerHTML = ''; labels.innerHTML = '';
-
-const labelVals = gaugeLabels[unit];
-const tickVals = new Set();
-labelVals.forEach(v => tickVals.add(v));
-for (let i = 0; i < labelVals.length - 1; i++) {
-const mid = (labelVals[i] + labelVals[i+1]) / 2;
-tickVals.add(mid);
-}
-
-tickVals.forEach(val => {
-const isMajor = labelVals.includes(val);
-const frac = speedToFrac(val);
-const deg = ARC_START + frac * ARC_SWEEP;
-const innerR = isMajor ? R - 14 : R - 6;
-const outerR = R + 5;
-const p1 = polarToXY(deg, innerR), p2 = polarToXY(deg, outerR);
-const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
-line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
-const lIsLight = document.documentElement.classList.contains('light');
-line.setAttribute('stroke', isMajor ? (lIsLight ? '#888' : '#3a3a3a') : (lIsLight ? '#bbb' : '#252525'));
-line.setAttribute('stroke-width', isMajor ? '1.5' : '1');
-ticks.appendChild(line);
-});
-
-labelVals.forEach(val => {
-const frac = speedToFrac(val);
-const deg = ARC_START + frac * ARC_SWEEP;
-const lp = polarToXY(deg, R - 30);
-const text = document.createElementNS('http://www.w3.org/2000/svg','text');
-text.setAttribute('x', lp.x); text.setAttribute('y', lp.y);
-text.setAttribute('dominant-baseline','middle');
-text.setAttribute('data-val', val);
-text.setAttribute('fill', document.documentElement.classList.contains('light') ? '#111' : '#f0f0f0');
-text.textContent = val;
-labels.appendChild(text);
-});
+  const fullArc = describeArc(ARC_START, ARC_END);
+  const isLight = document.documentElement.classList.contains('light');
+  const trackEl = document.getElementById('arc-track');
+  trackEl.setAttribute('d', fullArc);
+  trackEl.setAttribute('stroke', isLight ? '#ddd' : '#222');
+  const needleEl = document.getElementById('needle');
+  const dotEl = document.getElementById('needle-dot');
+  if (needleEl) needleEl.style.stroke = isLight ? '#111111' : '#e8ff47';
+  if (dotEl) dotEl.setAttribute('fill', isLight ? '#111111' : '#e8ff47');
+  const fill = document.getElementById('arc-fill');
+  fill.setAttribute('d', fullArc);
+  const arcLen = Math.PI * R * ARC_SWEEP / 180;
+  fill.style.strokeDasharray = arcLen;
+  fill.style.strokeDashoffset = arcLen;
+  fill._len = arcLen;
+  const ticks = document.getElementById('ticks');
+  const labels = document.getElementById('speed-labels');
+  ticks.innerHTML = ''; labels.innerHTML = '';
+  const labelVals = gaugeLabels[unit];
+  const tickVals = new Set();
+  labelVals.forEach(v => tickVals.add(v));
+  for (let i = 0; i < labelVals.length - 1; i++) {
+    const mid = (labelVals[i] + labelVals[i+1]) / 2;
+    tickVals.add(mid);
+  }
+  tickVals.forEach(val => {
+    const isMajor = labelVals.includes(val);
+    const frac = speedToFrac(val);
+    const deg = ARC_START + frac * ARC_SWEEP;
+    const innerR = isMajor ? R - 14 : R - 6;
+    const outerR = R + 5;
+    const p1 = polarToXY(deg, innerR), p2 = polarToXY(deg, outerR);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+    line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+    const lIsLight = document.documentElement.classList.contains('light');
+    line.setAttribute('stroke', isMajor ? (lIsLight ? '#888' : '#3a3a3a') : (lIsLight ? '#bbb' : '#252525'));
+    line.setAttribute('stroke-width', isMajor ? '1.5' : '1');
+    ticks.appendChild(line);
+  });
+  labelVals.forEach(val => {
+    const frac = speedToFrac(val);
+    const deg = ARC_START + frac * ARC_SWEEP;
+    const lp = polarToXY(deg, R - 30);
+    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.setAttribute('x', lp.x); text.setAttribute('y', lp.y);
+    text.setAttribute('dominant-baseline','middle');
+    text.setAttribute('data-val', val);
+    text.setAttribute('fill', document.documentElement.classList.contains('light') ? '#111' : '#f0f0f0');
+    text.textContent = val;
+    labels.appendChild(text);
+  });
 }
 
 function updateGauge(speedVal) {
-const frac = Math.min(1, speedToFrac(speedVal));
-const fill = document.getElementById('arc-fill');
-const len = fill._len || 1;
-fill.style.strokeDashoffset = len * (1 - frac);
-fill.style.opacity = speedVal > 0 ? '1' : '0';
-
-const deg = ARC_START + frac * ARC_SWEEP;
-const tip = polarToXY(deg, R - 18);
-const base = polarToXY(deg + 180, 12);
-const needle = document.getElementById('needle');
-needle.setAttribute('x1', base.x.toFixed(2)); needle.setAttribute('y1', base.y.toFixed(2));
-needle.setAttribute('x2', tip.x.toFixed(2));  needle.setAttribute('y2', tip.y.toFixed(2));
-
-const bp = breakpoint[unit];
-const isLight = document.documentElement.classList.contains('light');
-if (speedVal > bp) {
-const red = isLight ? '#cc2222' : '#ff4444';
-fill.style.stroke = red;
-needle.style.stroke = red;
-} else {
-fill.style.stroke = isLight ? '#111111' : '#e8ff47';
-needle.style.stroke = isLight ? '#111111' : '#e8ff47';
-}
-const ndot = document.getElementById('needle-dot');
-if (ndot) ndot.setAttribute('fill', isLight ? '#111111' : '#e8ff47');
-
-const labelsEl = document.getElementById('speed-labels');
-if (labelsEl) {
-const lblLight = document.documentElement.classList.contains('light');
-Array.from(labelsEl.children).forEach(el => {
-const labelVal = parseFloat(el.getAttribute('data-val'));
-const t = Math.min(1, Math.max(0, (speedVal - labelVal + 8) / 12));
-if (lblLight) {
-const v = Math.round(0xaa + (0x11 - 0xaa) * t);
-el.setAttribute('fill', `rgb(${v},${v},${v})`);
-} else {
-const r = Math.round(0xf0 + (0xe8 - 0xf0) * t);
-const g = Math.round(0xf0 + (0xff - 0xf0) * t);
-const b = Math.round(0xf0 + (0x47 - 0xf0) * t);
-el.setAttribute('fill', `rgb(${r},${g},${b})`);
-}
-});
-}
+  const frac = Math.min(1, speedToFrac(speedVal));
+  const fill = document.getElementById('arc-fill');
+  const len = fill._len || 1;
+  fill.style.strokeDashoffset = len * (1 - frac);
+  fill.style.opacity = speedVal > 0 ? '1' : '0';
+  const deg = ARC_START + frac * ARC_SWEEP;
+  const tip = polarToXY(deg, R - 18);
+  const base = polarToXY(deg + 180, 12);
+  const needle = document.getElementById('needle');
+  needle.setAttribute('x1', base.x.toFixed(2)); needle.setAttribute('y1', base.y.toFixed(2));
+  needle.setAttribute('x2', tip.x.toFixed(2)); needle.setAttribute('y2', tip.y.toFixed(2));
+  const bp = breakpoint[unit];
+  const isLight = document.documentElement.classList.contains('light');
+  if (speedVal > bp) {
+    const red = isLight ? '#cc2222' : '#ff4444';
+    fill.style.stroke = red;
+    needle.style.stroke = red;
+  } else {
+    fill.style.stroke = isLight ? '#111111' : '#e8ff47';
+    needle.style.stroke = isLight ? '#111111' : '#e8ff47';
+  }
+  const ndot = document.getElementById('needle-dot');
+  if (ndot) ndot.setAttribute('fill', isLight ? '#111111' : '#e8ff47');
+  const labelsEl = document.getElementById('speed-labels');
+  if (labelsEl) {
+    const lblLight = document.documentElement.classList.contains('light');
+    Array.from(labelsEl.children).forEach(el => {
+      const labelVal = parseFloat(el.getAttribute('data-val'));
+      const t = Math.min(1, Math.max(0, (speedVal - labelVal + 8) / 12));
+      if (lblLight) {
+        const v = Math.round(0xaa + (0x11 - 0xaa) * t);
+        el.setAttribute('fill', `rgb(${v},${v},${v})`);
+      } else {
+        const r = Math.round(0xf0 + (0xe8 - 0xf0) * t);
+        const g = Math.round(0xf0 + (0xff - 0xf0) * t);
+        const b = Math.round(0xf0 + (0x47 - 0xf0) * t);
+        el.setAttribute('fill', `rgb(${r},${g},${b})`);
+      }
+    });
+  }
 }
 
 // ── Smooth Animation Loop ─────────────────────────────────────
+// FIX: Higher alpha for much more responsive needle movement.
+// FIX: Interpolate currentSpeedMS between GPS fixes using elapsed time.
 let smoothRafId = null;
 let lastTickTime = 0;
+const ALPHA_RISE = 0.22;  // was 0.10 — faster rise response
+const ALPHA_FALL = 0.10;  // was 0.04 — faster fall response
 
-const ALPHA_RISE = 0.10;
-const ALPHA_FALL = 0.04;
+function getInterpolatedSpeedMS() {
+  if (!tracking || sourceMode === 'ip') return currentSpeedMS;
+  // If GPS is delivering — interpolate between prev and curr speed
+  // based on how much time has elapsed since the last fix
+  const now = performance.now();
+  const elapsed = now - lastGpsTime;
+  if (gpsInterval <= 0 || elapsed <= 0) return currentSpeedMS;
+  // Linear interpolation clamped to [0, 1] of the fix interval
+  const t = Math.min(1, elapsed / gpsInterval);
+  // Blend: if speed is dropping, don't project forward past 0
+  const interpolated = prevSpeedMS + (currSpeedMS - prevSpeedMS) * t;
+  return Math.max(0, interpolated);
+}
 
 function startSmoothLoop() {
-if (smoothRafId) return;
-lastTickTime = performance.now();
-function tick(now) {
-const dt = Math.min((now - lastTickTime) / (1000 / 60), 4);
-lastTickTime = now;
-const target = convert[unit](currentSpeedMS);
-const diff = target - needleSpeed;
-const alpha = diff > 0 ? ALPHA_RISE : ALPHA_FALL;
-const factor = 1 - Math.pow(1 - alpha, dt);
-if (Math.abs(diff) < 0.05) {
-needleSpeed = target;
-} else {
-needleSpeed += diff * factor;
-}
-displayedSpeed = Math.round(needleSpeed);
-renderDisplay(needleSpeed, displayedSpeed);
-smoothRafId = requestAnimationFrame(tick);
-}
-smoothRafId = requestAnimationFrame(tick);
+  if (smoothRafId) return;
+  lastTickTime = performance.now();
+  function tick(now) {
+    const dt = Math.min((now - lastTickTime) / (1000 / 60), 4);
+    lastTickTime = now;
+
+    const targetMS = getInterpolatedSpeedMS();
+    const target = convert[unit](targetMS);
+    const diff = target - needleSpeed;
+    const alpha = diff > 0 ? ALPHA_RISE : ALPHA_FALL;
+    const factor = 1 - Math.pow(1 - alpha, dt);
+    if (Math.abs(diff) < 0.05) {
+      needleSpeed = target;
+    } else {
+      needleSpeed += diff * factor;
+    }
+    displayedSpeed = Math.round(needleSpeed);
+    renderDisplay(needleSpeed, displayedSpeed);
+    smoothRafId = requestAnimationFrame(tick);
+  }
+  smoothRafId = requestAnimationFrame(tick);
 }
 
 function stopSmoothLoop() {
-if (smoothRafId) { cancelAnimationFrame(smoothRafId); smoothRafId = null; }
+  if (smoothRafId) { cancelAnimationFrame(smoothRafId); smoothRafId = null; }
 }
 
 function renderDisplay(needleSpeedVal, displaySpeedVal) {
-const el = document.getElementById('speed-display');
-el.textContent = displaySpeedVal;
-const bp = breakpoint[unit];
-el.classList.toggle('moving', displaySpeedVal > 0 && displaySpeedVal <= bp);
-el.classList.toggle('fast', displaySpeedVal > bp);
-updateGauge(needleSpeedVal);
+  const el = document.getElementById('speed-display');
+  el.textContent = displaySpeedVal;
+  const bp = breakpoint[unit];
+  el.classList.toggle('moving', displaySpeedVal > 0 && displaySpeedVal <= bp);
+  el.classList.toggle('fast', displaySpeedVal > bp);
+  updateGauge(needleSpeedVal);
 }
 
 // ── Stats refresh ─────────────────────────────────────────────
 function refreshStats() {
-document.getElementById('stat-max').textContent = toDisplay(maxSpeed);
-const avgMs = speedSamples.length > 0
-? speedSamples.reduce((a, b) => a + b, 0) / speedSamples.length : 0;
-document.getElementById('stat-avg').textContent = toDisplay(avgMs);
-// KEY FIX: write totalDistKm here
-document.getElementById('stat-dist').textContent = totalDistKm.toFixed(2);
+  document.getElementById('stat-max').textContent = toDisplay(maxSpeed);
+  const avgMs = speedSamples.length > 0
+    ? speedSamples.reduce((a, b) => a + b, 0) / speedSamples.length : 0;
+  document.getElementById('stat-avg').textContent = toDisplay(avgMs);
+  document.getElementById('stat-dist').textContent = totalDistKm.toFixed(2);
 }
 
 // ── Direction helper ──────────────────────────────────────────
 function headingToCardinal(h) {
-const dirs = ['N','NE','E','SE','S','SW','W','NW'];
-return dirs[Math.round(h / 45) % 8];
+  const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+  return dirs[Math.round(h / 45) % 8];
+}
+
+// ── IP Geolocation fallback ───────────────────────────────────
+// Called immediately on START so user sees location while GPS warms up.
+// We only use it to show "connected" status — speed stays 0 until GPS locks.
+function fetchIPLocation() {
+  fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(4000) })
+    .then(r => r.json())
+    .then(data => {
+      if (sourceMode === 'gps') return; // GPS already locked, ignore
+      if (data && data.latitude && data.longitude) {
+        // Use IP lat/lon as seed so first GPS fix distance calc is clean
+        if (lastLat === null) {
+          lastLat = data.latitude;
+          lastLon = data.longitude;
+        }
+        // Show IP lock in badge
+        sourceMode = 'ip';
+        const badge = document.getElementById('sat-badge');
+        badge.classList.add('ip-lock');
+        document.getElementById('sat-label').textContent = 'IP LOCK';
+        document.getElementById('sat-dot').classList.add('locked');
+        document.getElementById('signal-fill').style.width = '20%';
+        document.getElementById('signal-val').textContent = 'IP ~' + (data.city || '?');
+        document.getElementById('error-msg').textContent = '';
+      }
+    })
+    .catch(() => {}); // silent fail — GPS will take over
 }
 
 // ── GPS position handler ──────────────────────────────────────
-// THIS IS THE CORE FIX: haversine() is now called each GPS fix
 function onPosition(pos) {
-const lat = pos.coords.latitude;
-const lon = pos.coords.longitude;
-const spd = pos.coords.speed;
-const speedMs = (spd != null && spd >= 0) ? spd : 0;
-const acc = pos.coords.accuracy;
+  const lat = pos.coords.latitude;
+  const lon = pos.coords.longitude;
+  const spd = pos.coords.speed;
+  const speedMs = (spd != null && spd >= 0) ? spd : 0;
+  const acc = pos.coords.accuracy;
 
-currentSpeedMS = speedMs;
+  // FIX: Track GPS fix interval for interpolation
+  const now = performance.now();
+  if (lastGpsTime > 0) {
+    const interval = now - lastGpsTime;
+    // Smooth the interval estimate (ignore outliers > 5s)
+    if (interval < 5000) {
+      gpsInterval = gpsInterval * 0.7 + interval * 0.3;
+    }
+  }
+  prevSpeedMS = currSpeedMS;
+  currSpeedMS = speedMs;
+  lastGpsTime = now;
+  currentSpeedMS = speedMs;
 
-// Track max from real GPS speed only (not animated needle)
-if (speedMs > maxSpeed) { maxSpeed = speedMs; }
+  // Switch from IP to GPS mode
+  if (sourceMode !== 'gps') {
+    sourceMode = 'gps';
+    const badge = document.getElementById('sat-badge');
+    badge.classList.remove('ip-lock');
+  }
 
-// Accumulate distance between consecutive fixes
-if (lastLat !== null && lastLon !== null) {
-const segKm = haversine(lastLat, lastLon, lat, lon);
-if (segKm < 0.5) { // ignore GPS teleport jumps
-totalDistKm += segKm;
-}
-}
-lastLat = lat;
-lastLon = lon;
+  if (speedMs > maxSpeed) { maxSpeed = speedMs; }
 
-// Speed samples for rolling average (moving only)
-if (speedMs > 0.5) {
-speedSamples.push(speedMs);
-if (speedSamples.length > 300) speedSamples.shift();
-}
+  if (lastLat !== null && lastLon !== null) {
+    const segKm = haversine(lastLat, lastLon, lat, lon);
+    if (segKm < 0.5) { totalDistKm += segKm; }
+  }
+  lastLat = lat;
+  lastLon = lon;
 
-// Altitude
-const alt = pos.coords.altitude;
-document.getElementById('stat-alt').textContent =
-alt != null ? Math.round(alt) : '—';
+  if (speedMs > 0.5) {
+    speedSamples.push(speedMs);
+    if (speedSamples.length > 300) speedSamples.shift();
+  }
 
-// Heading / direction
-const heading = pos.coords.heading;
-const dirEl = document.getElementById('direction-text');
-if (heading != null && !isNaN(heading) && speedMs > 0.5) {
-dirEl.textContent = headingToCardinal(heading);
-} else {
-dirEl.textContent = '—';
-}
+  const alt = pos.coords.altitude;
+  document.getElementById('stat-alt').textContent =
+    alt != null ? Math.round(alt) : '—';
 
-// Signal quality bar
-const fillEl = document.getElementById('signal-fill');
-const valEl  = document.getElementById('signal-val');
-const dotEl  = document.getElementById('sat-dot');
-const lblEl  = document.getElementById('sat-label');
-if (acc != null) {
-const pct = Math.max(0, Math.min(100, Math.round((1 - (acc - 5) / 95) * 100)));
-fillEl.style.width = pct + '%';
-valEl.textContent = `±${Math.round(acc)}M`;
-dotEl.classList.add('locked');
-lblEl.textContent = pct > 70 ? 'LOCKED' : pct > 30 ? 'WEAK' : 'POOR';
-}
+  const heading = pos.coords.heading;
+  const dirEl = document.getElementById('direction-text');
+  if (heading != null && !isNaN(heading) && speedMs > 0.5) {
+    dirEl.textContent = headingToCardinal(heading);
+  } else {
+    dirEl.textContent = '—';
+  }
 
-refreshStats(); // updates DIST, MAX, AVG every fix
+  const fillEl = document.getElementById('signal-fill');
+  const valEl = document.getElementById('signal-val');
+  const dotEl = document.getElementById('sat-dot');
+  const lblEl = document.getElementById('sat-label');
+  if (acc != null) {
+    const pct = Math.max(0, Math.min(100, Math.round((1 - (acc - 5) / 95) * 100)));
+    fillEl.style.width = pct + '%';
+    valEl.textContent = `±${Math.round(acc)}M`;
+    dotEl.classList.add('locked');
+    lblEl.textContent = pct > 70 ? 'LOCKED' : pct > 30 ? 'WEAK' : 'POOR';
+  }
+
+  refreshStats();
 }
 
 // ── GPS error handler ─────────────────────────────────────────
 function onError(err) {
-const msgs = { 1:'LOCATION DENIED — ENABLE IN BROWSER', 2:'POSITION UNAVAILABLE', 3:'GPS TIMEOUT' };
-document.getElementById('error-msg').textContent = msgs[err.code] || 'GPS ERROR';
-stopTracking();
+  const msgs = { 1:'LOCATION DENIED — ENABLE IN BROWSER', 2:'POSITION UNAVAILABLE', 3:'GPS TIMEOUT' };
+  document.getElementById('error-msg').textContent = msgs[err.code] || 'GPS ERROR';
+  // Only stop fully if permission denied — timeout/unavailable: keep trying
+  if (err.code === 1) stopTracking();
 }
 
 // ── Tracking control ──────────────────────────────────────────
 function startTracking() {
-if (!navigator.geolocation) {
-document.getElementById('error-msg').textContent = 'GPS NOT SUPPORTED';
-return;
-}
-// Reset all session state
-lastLat = null; lastLon = null;
-totalDistKm = 0;
-maxSpeed = 0;
-currentSpeedMS = 0;
-speedSamples = [];
-needleSpeed = 0;
-displayedSpeed = 0;
-refreshStats();
-document.getElementById('stat-alt').textContent = '—';
-document.getElementById('direction-text').textContent = '—';
-document.getElementById('signal-fill').style.width = '0%';
-document.getElementById('signal-val').textContent = 'NO LOCK';
-document.getElementById('sat-dot').classList.remove('locked');
-document.getElementById('sat-label').textContent = 'NO SAT';
+  if (!navigator.geolocation) {
+    document.getElementById('error-msg').textContent = 'GPS NOT SUPPORTED';
+    return;
+  }
 
-tracking = true;
-document.getElementById('start-btn').classList.add('tracking');
-document.getElementById('start-btn').innerHTML =
-'<span class="sdot on" id="sdot"></span>STOP TRACKING';
-document.getElementById('error-msg').textContent = '';
+  // Reset session state
+  lastLat = null; lastLon = null;
+  totalDistKm = 0;
+  maxSpeed = 0;
+  currentSpeedMS = 0;
+  prevSpeedMS = 0;
+  currSpeedMS = 0;
+  lastGpsTime = 0;
+  gpsInterval = 1000;
+  speedSamples = [];
+  needleSpeed = 0;
+  displayedSpeed = 0;
+  sourceMode = 'none';
+  refreshStats();
+  document.getElementById('stat-alt').textContent = '—';
+  document.getElementById('direction-text').textContent = '—';
+  document.getElementById('signal-fill').style.width = '0%';
+  document.getElementById('signal-val').textContent = 'NO LOCK';
+  document.getElementById('sat-dot').classList.remove('locked');
+  document.getElementById('sat-label').textContent = 'NO SAT';
+  document.getElementById('sat-badge').classList.remove('ip-lock');
 
-watchId = navigator.geolocation.watchPosition(onPosition, onError, {
-enableHighAccuracy: true,
-timeout: 10000,
-maximumAge: 0
-});
-startSmoothLoop();
+  tracking = true;
+  document.getElementById('start-btn').classList.add('tracking');
+  document.getElementById('start-btn').innerHTML =
+    '<span class="sdot on" id="sdot"></span>STOP TRACKING';
+  document.getElementById('error-msg').textContent = '';
+
+  // FIX: Kick off IP geolocation immediately for fast first response
+  fetchIPLocation();
+
+  // FIX: maximumAge: 2000 allows browser to use a recent cached fix
+  // so the first reading comes back instantly instead of waiting for a cold lock.
+  // enableHighAccuracy: true still ensures GPS takes over once available.
+  watchId = navigator.geolocation.watchPosition(onPosition, onError, {
+    enableHighAccuracy: true,
+    timeout: 15000,
+    maximumAge: 2000
+  });
+
+  startSmoothLoop();
 }
 
 function stopTracking() {
-tracking = false;
-if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
-currentSpeedMS = 0;
-document.getElementById('start-btn').classList.remove('tracking');
-document.getElementById('start-btn').innerHTML =
-'<span class="sdot" id="sdot"></span>START TRACKING';
-setTimeout(() => { stopSmoothLoop(); needleSpeed = 0; renderDisplay(0, 0); }, 2500);
+  tracking = false;
+  if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+  currentSpeedMS = 0;
+  prevSpeedMS = 0;
+  currSpeedMS = 0;
+  sourceMode = 'none';
+  document.getElementById('start-btn').classList.remove('tracking');
+  document.getElementById('start-btn').innerHTML =
+    '<span class="sdot" id="sdot"></span>START TRACKING';
+  document.getElementById('sat-badge').classList.remove('ip-lock');
+  setTimeout(() => { stopSmoothLoop(); needleSpeed = 0; renderDisplay(0, 0); }, 2500);
 }
 
 function toggleTracking() {
-if (tracking) stopTracking(); else startTracking();
+  if (tracking) stopTracking(); else startTracking();
 }
 
 // ── View mode (gauge / minimal) ────────────────────────────────
@@ -626,64 +694,69 @@ function toggleView() {
 }
 
 // ── Unit switching ─────────────────────────────────────────────
+// FIX: Resync needle to current converted speed immediately so it
+// doesn't freeze or jump on unit switch.
 function setUnit(u) {
-unit = u;
-try { localStorage.setItem('velox-unit', u); } catch(e) {}
-['kmh','mph','ms'].forEach(id => {
-document.getElementById('btn-'+id).classList.toggle('active', id === u);
-});
-// Resync animated state to new unit so needle doesn't glitch
-needleSpeed = convert[unit](currentSpeedMS);
-displayedSpeed = Math.round(needleSpeed);
-buildGauge();
-refreshStats();
-renderDisplay(needleSpeed, displayedSpeed);
+  unit = u;
+  try { localStorage.setItem('velox-unit', u); } catch(e) {}
+  ['kmh','mph','ms'].forEach(id => {
+    document.getElementById('btn-'+id).classList.toggle('active', id === u);
+  });
+  // Resync animated state to new unit
+  const liveSpeed = getInterpolatedSpeedMS();
+  needleSpeed = convert[unit](liveSpeed);
+  displayedSpeed = Math.round(needleSpeed);
+  buildGauge();
+  refreshStats();
+  renderDisplay(needleSpeed, displayedSpeed);
 }
 
 // ── Theme ──────────────────────────────────────────────────────
 function toggleTheme() {
-const isLight = document.documentElement.classList.toggle('light');
-try { localStorage.setItem('velox-theme', isLight ? 'light' : 'dark'); } catch(e) {}
-buildGauge();
+  const isLight = document.documentElement.classList.toggle('light');
+  try { localStorage.setItem('velox-theme', isLight ? 'light' : 'dark'); } catch(e) {}
+  buildGauge();
 }
 
 // ── PWA Install ────────────────────────────────────────────────
 function installApp() {
-if (deferredPrompt) {
-deferredPrompt.prompt();
-deferredPrompt.userChoice.then(() => { deferredPrompt = null; dismissInstall(); });
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => { deferredPrompt = null; dismissInstall(); });
+  }
 }
-}
+
 function dismissInstall() {
-document.getElementById('install-banner').classList.remove('visible');
-try { localStorage.setItem('velox-install-dismissed', '1'); } catch(e) {}
+  document.getElementById('install-banner').classList.remove('visible');
+  try { localStorage.setItem('velox-install-dismissed', '1'); } catch(e) {}
 }
+
 window.addEventListener('beforeinstallprompt', e => {
-e.preventDefault(); deferredPrompt = e;
-try {
-if (!localStorage.getItem('velox-install-dismissed'))
-document.getElementById('install-banner').classList.add('visible');
-} catch(e) {
-document.getElementById('install-banner').classList.add('visible');
-}
+  e.preventDefault(); deferredPrompt = e;
+  try {
+    if (!localStorage.getItem('velox-install-dismissed'))
+      document.getElementById('install-banner').classList.add('visible');
+  } catch(e) {
+    document.getElementById('install-banner').classList.add('visible');
+  }
 });
 
 // ── Init ───────────────────────────────────────────────────────
 (function init() {
-try {
-if (localStorage.getItem('velox-theme') === 'light')
-document.documentElement.classList.add('light');
-const savedUnit = localStorage.getItem('velox-unit');
-if (savedUnit) {
-unit = savedUnit;
-['kmh','mph','ms'].forEach(id => {
-document.getElementById('btn-'+id).classList.toggle('active', id === unit);
-});
-}
-} catch(e) {}
-buildGauge();
+  try {
+    if (localStorage.getItem('velox-theme') === 'light')
+      document.documentElement.classList.add('light');
+    const savedUnit = localStorage.getItem('velox-unit');
+    if (savedUnit) {
+      unit = savedUnit;
+      ['kmh','mph','ms'].forEach(id => {
+        document.getElementById('btn-'+id).classList.toggle('active', id === unit);
+      });
+    }
+  } catch(e) {}
+  buildGauge();
   applyView();
-renderDisplay(0, 0);
+  renderDisplay(0, 0);
 })();
 </script>
 </body>
